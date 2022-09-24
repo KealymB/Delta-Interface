@@ -4,12 +4,13 @@ import PySimpleGUI as sg
 import cv2
 import numpy as np
 from pathGen import genCommands, setParams
+from serialComs import readComs, handleComs
 
 """
 GUI program for the HMI of the delta robot
 """
 
-# need to adjust for image brightness and stuff for better potrace results
+# TODO: need to adjust for image brightness and stuff for better potrace results
 
 def main():
     sg.theme('Black')
@@ -29,12 +30,23 @@ def main():
 
     window.Maximize()
 
-    # ---===--- Event LOOP Read and display frames, operate the GUI --- #
+    # --- Event Loop --- #
     cap = cv2.VideoCapture(0)
     preview = True
     snapShot = None
+    commands = [] # Command buffer for path commands
+    index = 0     # Current position in command buffer
 
     while True:
+        # Serial Handling
+        readComs()
+
+        # Instruction Handling
+        if len(commands) > 0:
+            if handleComs(commands[index]) > 0: # if it is a new instruction and a move has been competed, send next command
+                index += 1
+
+        # GUI Handling
         event, values = window.read(timeout=20)
         if event == 'Exit' or event == sg.WIN_CLOSED:
             return

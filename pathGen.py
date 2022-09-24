@@ -4,13 +4,11 @@ from svgelements import SVG
 import os
 
 # Drawing params
-drawingWidth = 140  # width in mm
-drawingHeight = 140 # height in mm
+drawingWidth = 140      # width in mm
+drawingHeight = 140     # height in mm
 
-penLiftHeight = 170
-penDrawingHeight = 150
-
-image_name="snapShot"
+penLiftHeight = 170     # lifted pen height in mm
+penDrawingHeight = 150  # Drawing height in mm
 
 def setParams(drawingWidth = 140, drawingHeight = 140, penLiftHeight = 170, penDownHeight = 150):
     drawingWidth = drawingWidth
@@ -19,7 +17,7 @@ def setParams(drawingWidth = 140, drawingHeight = 140, penLiftHeight = 170, penD
     penDrawingHeight = penDrawingHeight
 
 
-def genCommands(imageName = "snapShot"):
+def genCommands(image_name = "snapShot"):
     # convert bitmap image to svg file
     os.system("potrace --svg {image_name}.bmp -o {image_name}.svg".format(image_name=image_name)) 
 
@@ -48,9 +46,10 @@ def genCommands(imageName = "snapShot"):
                 x = round(float(coords[0])*xScale - xOffset, 2)
                 y = round(float(coords[1])*yScale - yOffset, 2)
 
-                # perform pen lift
+                # perform pen lift at current position
+                commands.append("PL !") # Lift pen at current location
                 commands.append("LM {} {} {}!".format(x, y, penLiftHeight)) # perform linear move with lifted pen
-                commands.append("LM {} {} {}!".format(x, y, penDrawingHeight)) # drop pen
+                commands.append("PD !") # Drop pen at current location
 
             if "L" in str(path): # Drawn Line
                 line = str(path).split(" ")
