@@ -7,6 +7,7 @@ from enum import Enum
 from pathGen import genCommands, setParams
 from serialComs import readComs, handleComs
 from svg2png import renderProgress
+from bgRemover import removeBG
 
 """
 GUI program for the HMI of the delta robot
@@ -24,7 +25,7 @@ def Img2Byte(imgPath):
 
 def main():
     # Params
-    imgSize = (640, 480)
+    imgSize = (512, 512)
 
     sg.theme('Black')
 
@@ -65,22 +66,23 @@ def main():
         if event == 'Exit' or event == sg.WIN_CLOSED:
             return
 
-        if event == 'Capture':
+        if event == 'Capture' and State != States.HOMING:
             ret, frame = cap.read()
             cv2.imwrite("snapShot.bmp", frame)
+            removeBG(imgSize)
             commands, totalPaths = genCommands()
             renderProgress(totalPaths)
             snapShot = Img2Byte("progress.png")
             State = States.PREVIEW
 
         if event == 'Clear':
-            print(State)
             window['Capture'].update(visible = True)             # show capture button
             window['Draw'].update(visible = False)               # hide draw button
             window['Clear'].update(visible = False)              # hide clear button
             State = States.IDLE
 
         if event == 'Draw':
+            print(commands)
             State = States.DRAWING
 
         if State == States.HOMING:
