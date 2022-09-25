@@ -1,10 +1,12 @@
 #!/usr/bin/env python
-from queue import Empty
+from PIL import Image
 import PySimpleGUI as sg
 import cv2
 import numpy as np
+from enum import Enum
 from pathGen import genCommands, setParams
 from serialComs import readComs, handleComs
+from svg2png import renderProgress
 
 """
 GUI program for the HMI of the delta robot
@@ -12,17 +14,26 @@ GUI program for the HMI of the delta robot
 
 # TODO: need to adjust for image brightness and stuff for better potrace results
 
+def Button(img, event, visible=True):
+    return sg.Button('', image_filename="GUI elements\{}.png".format(img), key=event, button_color=('black'), border_width=0, visible=visible)
+
+def Img2Byte(imgPath):
+    img = cv2.imread(imgPath)
+    imgbytes = cv2.imencode('.png', img)[1].tobytes()
+    return imgbytes
+
 def main():
+    # Params
+    imgSize = (640, 480)
+
     sg.theme('Black')
 
-    Button1Column = [[sg.Button('Take Picture', size=(10, 1), font='Helvetica 14')],
-               [sg.Button('Clear Picture', size=(10, 1), font='Any 14')]]
+    top_row = [sg.Push(), Button("B_Exit", "Exit")]
 
-    Button2Column = [[sg.Button('Draw Picture', size=(10, 1), font='Helvetica 14')],
-               [sg.Button('Exit', size=(10, 1), font='Any 14')]]        
+    centeredFrame = [[sg.Image(size=imgSize, filename='', key='image')], [Button("B_Capture", "Capture"), Button("B_Draw", "Draw", False), Button("B_Clear", "Clear", False)]]
 
     # define the window layout
-    layout = [[sg.VPush()], [sg.Column(Button1Column), sg.Image(filename='', key='image'), sg.Column(Button2Column)], [sg.VPush()]]
+    layout = [[sg.VPush(), top_row], [sg.Column(centeredFrame,element_justification='c')], [sg.VPush()]]
 
     # create the window and show it without the plot
     window = sg.Window('Delta Draw',
@@ -36,6 +47,9 @@ def main():
     snapShot = None
     commands = [] # Command buffer for path commands
     index = 0     # Current position in command buffer
+    numPaths = 0
+    States = Enum('State', 'HOMING IDLE PREVIEW DRAWING ERROR')
+    State = States.IDLE
 
     while True:
         # Serial Handling
@@ -51,25 +65,37 @@ def main():
         if event == 'Exit' or event == sg.WIN_CLOSED:
             return
 
-        if event == 'Take Picture':
+        if event == 'Capture':
             ret, frame = cap.read()
             cv2.imwrite("snapShot.bmp", frame)
-            snapShot = cv2.imencode('.png', frame)[1].tobytes()
+            commands, totalPaths = genCommands()
+            renderProgress(totalPaths)
+            snapShot = Img2Byte("progress.png")
+            State = States.PREVIEW
 
-        if event == 'Clear Picture':
-            snapShot = None
+        if event == 'Clear':
+            print(State)
+            window['Capture'].update(visible = True)             # show capture button
+            window['Draw'].update(visible = False)               # hide draw button
+            window['Clear'].update(visible = False)              # hide clear button
+            State = States.IDLE
 
-        if event == 'Draw Picture':
-            commands = genCommands()
-            print(commands)
+        if event == 'Draw':
+            State = States.DRAWING
 
-        if preview:
+        if State == States.HOMING:
+            window['image'].update(data=Img2Byte("GUI elements\homing.png"), size=imgSize)
+
+        if State == States.PREVIEW:
+            window['Capture'].update(visible = False)           # hide capture button
+            window['Draw'].update(visible = True)               # show draw button
+            window['Clear'].update(visible = True)              # show clear button
+            window['image'].update(data=snapShot, size=imgSize) # show the final image
+
+        if State == States.IDLE:
             ret, frame = cap.read()
-            if snapShot == None:
-                imgbytes = cv2.imencode('.png', frame)[1].tobytes()  # ditto
-                window['image'].update(data=imgbytes)
-            else:
-                window['image'].update(data=snapShot)
+            imgbytes = cv2.imencode('.png', frame)[1].tobytes()
+            window['image'].update(data=imgbytes, size=imgSize)
         
 
 if __name__ == "__main__":

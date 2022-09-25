@@ -1,4 +1,5 @@
 import serial
+from enum import Enum
 
 # State Variables
 buffer = ""     #Line buffer saving latest com
@@ -31,7 +32,7 @@ def handleComs(instruction = None):
     if not homed and buffer.split("-")[0] == "I2": 
         homed = True
         clearBuffer()
-        return 0
+        return 2 # Return idle state
     if homed and not error and not moving:
         if buffer.split("-")[0] == "E1":
             #repeat command if command is incorrectly received 
@@ -52,7 +53,7 @@ def handleComs(instruction = None):
     if moving and buffer.startswith("A"): # Move has been completed, A2 returned from serial
         moving = False
         clearBuffer()
-        return 1
+        return 1 # return waiting for instruction state
     return 0
     
 

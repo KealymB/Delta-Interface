@@ -1,4 +1,3 @@
-from svgpathtools import svg2paths, CubicBezier
 from PIL import Image
 from svgelements import SVG
 import os
@@ -82,5 +81,5 @@ def genCommands(image_name = "snapShot"):
 
                 commands.append("CB {} {} {} {} {} {} {} {} {}!".format(startX, startY, c1X, c1Y, c2X, c2Y, endX, endY, interpDist)) # perform linear move (lifted pen)
 
-    return commands
+    return commands, len(paths)
         
