@@ -15,7 +15,7 @@ GUI program for the HMI of the delta robot
 # TODO: need to adjust for image brightness and stuff for better potrace results
 
 def Button(img, event, visible=True):
-    return sg.Button('', image_filename="GUI_Elements/{}.png".format(img), key=event, button_color=('black'), border_width=0, visible=visible)
+    return sg.Button('', image_filename="GUI_Elements\{}.png".format(img), key=event, button_color=('black'), border_width=0, visible=visible)
 
 def Img2Byte(imgPath):
     img = cv2.imread(imgPath)
@@ -24,22 +24,20 @@ def Img2Byte(imgPath):
 
 def main():
     # Params
-    imgSize = (300, 300)
+    imgSize = (450, 450)
 
     sg.theme('Black')
 
-    top_row = [sg.Push(), Button("B_Exit", "Exit")]
-
-    centeredFrame = [[sg.Image(size=imgSize, filename='', key='image')], [Button("B_Capture", "Capture"), Button("B_Draw", "Draw", False), Button("B_Clear", "Clear", False)]]
+    input_bar = sg.Column([[Button("B_Capture", "Capture")], [Button("B_Draw", "Draw", False)], [Button("B_Clear", "Clear", False)]])
 
     # define the window layout
-    layout = [[sg.VPush(), top_row], [sg.Column(centeredFrame,element_justification='c')], [sg.VPush()]]
+    layout = [[input_bar, sg.Column([[sg.Image(size=imgSize, filename='', key='image')]]), sg.Column([[Button("B_Exit", "Exit")]], vertical_alignment='t')]]
 
     # create the window and show it without the plot
     window = sg.Window('Delta Draw',
                        layout, location=(0, 0), no_titlebar=False, element_justification='c', size=(800, 480), keep_on_top=True).Finalize()
 
-    window.Maximize()
+    #window.Maximize()
 
     # --- Event Loop --- #
     cap = cv2.VideoCapture(0)
@@ -67,10 +65,11 @@ def main():
 
         if event == 'Capture' and State != States.HOMING:
             ret, frame = cap.read()
-            cv2.imwrite("snapShot.bmp", frame)
-            removeBG()
+            croped_img = frame[0:imgSize[0], 0:imgSize[1]]
+            cv2.imwrite("snapShot.bmp", croped_img)
+            removeBG(imgSize)
             commands, totalPaths = genCommands()
-            renderProgress(totalPaths)
+            renderProgress(totalPaths, imgSize)
             snapShot = Img2Byte("progress.png")
             State = States.PREVIEW
 
@@ -95,7 +94,8 @@ def main():
 
         if State == States.IDLE:
             ret, frame = cap.read()
-            imgbytes = cv2.imencode('.png', frame)[1].tobytes()
+            croped_img = frame[0:imgSize[0], 0:imgSize[1]]
+            imgbytes = cv2.imencode('.png', croped_img)[1].tobytes()
             window['image'].update(data=imgbytes, size=imgSize)
         
 

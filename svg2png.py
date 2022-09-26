@@ -1,9 +1,10 @@
+import cv2
 from svgpathtools import svg2paths2, wsvg, Path, Line, CubicBezier
 from svgelements import SVG
 from reportlab.graphics import renderPM
 from svglib.svglib import svg2rlg
 
-def renderProgress(progress):
+def renderProgress(progress, imgSize):
     paths, attributes, svg_attributes = svg2paths2('snapShot.svg')
 
     svg = SVG.parse('snapShot.svg')

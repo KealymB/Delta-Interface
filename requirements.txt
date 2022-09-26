@@ -1,6 +1,10 @@
-svgelements
-rlextra -i https://kealymmb@gmail.com:@www.reportlab.com/pypi
-svglib
 PySimpleGUI
+rlextra
+svglib
+svgelements
+svgpathtools
 cv2
 numpy
+cvzone
+mediapipe
+tensorflow==2.5.0
