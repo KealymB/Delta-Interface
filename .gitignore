@@ -1,4 +1,5 @@
 __pycache__/
+env/
 snapShot.*
 progress.*
 model.h5

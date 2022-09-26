@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from PIL import Image
 import PySimpleGUI as sg
 import cv2
@@ -16,7 +15,7 @@ GUI program for the HMI of the delta robot
 # TODO: need to adjust for image brightness and stuff for better potrace results
 
 def Button(img, event, visible=True):
-    return sg.Button('', image_filename="GUI elements\{}.png".format(img), key=event, button_color=('black'), border_width=0, visible=visible)
+    return sg.Button('', image_filename="GUI_Elements/{}.png".format(img), key=event, button_color=('black'), border_width=0, visible=visible)
 
 def Img2Byte(imgPath):
     img = cv2.imread(imgPath)
@@ -25,7 +24,7 @@ def Img2Byte(imgPath):
 
 def main():
     # Params
-    imgSize = (512, 512)
+    imgSize = (300, 300)
 
     sg.theme('Black')
 
@@ -38,7 +37,7 @@ def main():
 
     # create the window and show it without the plot
     window = sg.Window('Delta Draw',
-                       layout, location=(0, 0), no_titlebar=True, element_justification='c').Finalize()
+                       layout, location=(0, 0), no_titlebar=False, element_justification='c', size=(800, 480), keep_on_top=True).Finalize()
 
     window.Maximize()
 
@@ -69,7 +68,7 @@ def main():
         if event == 'Capture' and State != States.HOMING:
             ret, frame = cap.read()
             cv2.imwrite("snapShot.bmp", frame)
-            removeBG(imgSize)
+            removeBG()
             commands, totalPaths = genCommands()
             renderProgress(totalPaths)
             snapShot = Img2Byte("progress.png")
@@ -86,7 +85,7 @@ def main():
             State = States.DRAWING
 
         if State == States.HOMING:
-            window['image'].update(data=Img2Byte("GUI elements\homing.png"), size=imgSize)
+            window['image'].update(data=Img2Byte("GUI_Elements/homing.png"), size=imgSize)
 
         if State == States.PREVIEW:
             window['Capture'].update(visible = False)           # hide capture button

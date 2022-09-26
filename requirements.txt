@@ -1,0 +1,6 @@
+svgelements
+rlextra -i https://kealymmb@gmail.com:@www.reportlab.com/pypi
+svglib
+PySimpleGUI
+cv2
+numpy

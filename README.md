@@ -11,5 +11,8 @@ pip install svglib
 pip install PySimpleGUI
 pip install cv2
 pip install numpy
+pip install svgpathtools
 
-python Main.py
+## To run
+source /env/bin/activate
+pytho Main.py
