@@ -35,7 +35,7 @@ def main():
     window = sg.Window('Delta Draw',
                        layout, location=(0, 0), no_titlebar=False, element_justification='c', size=windowSize, keep_on_top=True).Finalize()
 
-    #window.Maximize()
+    window.Maximize()
 
     # --- Event Loop --- #
     global snapShot
@@ -47,14 +47,14 @@ def main():
     index = 0     # Current position in command buffer
     numPaths = 0
     States = Enum('State', 'HOMING IDLE PREVIEW DRAWING ERROR')
-    State = States.IDLE
+    State = States.HOMING
 
     while True:
         # Serial Handling
         readComs()
 
         # Instruction Handling
-        if len(commands) > 0:
+        if State == States.DRAWING:
             if handleComs(commands[index]) > 0: # if it is a new instruction and a move has been competed, send next command
                 index += 1
 

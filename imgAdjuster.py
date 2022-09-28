@@ -36,6 +36,6 @@ def automatic_brightness_and_contrast():
     beta = -minimum_gray * alpha
     
     auto_result = cv2.convertScaleAbs(image, alpha=alpha, beta=beta)
-    cv2.imwrite(auto_result)
+    cv2.imwrite('snapShot.bmp', auto_result)
 
 

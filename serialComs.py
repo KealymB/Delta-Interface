@@ -10,7 +10,7 @@ command = ""
 
 # Serial communication
 try: 
-    ser = serial.Serial('COM3', 115200)
+    ser = serial.Serial('/dev/ttyUSB0', 115200)
 except:
     ser = None
     print("Error opening serial")
@@ -26,7 +26,7 @@ def readComs():
     return 0 # return 0 if there is nothing in the serial buffer
 
 def handleComs(instruction = None):
-    global ser, command, moving
+    global ser, command, moving, homed, buffer
     if ser is None: 
         return 0
     if not homed and buffer.split("-")[0] == "I2": 
