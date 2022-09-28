@@ -10,6 +10,7 @@ from pathGen import genCommands, setParams
 from serialComs import readComs, handleComs
 from svg2png import renderProgress
 from bgRemover import removeBG
+from imgAdjuster import automatic_brightness_and_contrast
 
 """
 GUI program for the HMI of the delta robot
@@ -34,7 +35,7 @@ def main():
     window = sg.Window('Delta Draw',
                        layout, location=(0, 0), no_titlebar=False, element_justification='c', size=windowSize, keep_on_top=True).Finalize()
 
-    window.Maximize()
+    #window.Maximize()
 
     # --- Event Loop --- #
     global snapShot
@@ -122,6 +123,7 @@ def captureFrame(work_id, gui_queue, frame, imgSize):
     global snapShot
     croped_img = frame[0:imgSize[0], 0:imgSize[1]]
     cv2.imwrite("snapShot.bmp", croped_img)
+    automatic_brightness_and_contrast()
     removeBG(imgSize)
     commands, totalPaths = genCommands()
     renderProgress(totalPaths, imgSize)
