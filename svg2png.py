@@ -59,8 +59,13 @@ def renderProgress(progress, imgSize):
 
             prevIndex = i
 
-    wsvg(previewPath, svg_attributes=svg_attributes, filename='progress.svg')
+    wsvg(previewPath, filename='progress.svg')
 
     drawing = svg2rlg("progress.svg")
 
     renderPM.drawToFile(drawing, "progress.png", fmt="PNG")
+    
+    img = cv2.imread("progress.png")
+    img_resized = cv2.resize(img, (450, 450))
+    cv2.imwrite("progress.png", img_resized)
+    
