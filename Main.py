@@ -74,6 +74,7 @@ def main(logger):
             window['Exit'].update(visible = True)
             State = States.IDLE
             homed = True
+            ready = True
 
         # GUI Handling
         event, values = window.read(timeout=100)
@@ -109,12 +110,13 @@ def main(logger):
             logger.info("entered Drawing state")
             totCommands = len(commands) 
             window['drawing_progress'].update(visible=True)
-            window['drawing_progress'].update(20)
             # TODO: Update progress image evert few frames
             if ready: # if it is a new instruction and a move has been competed, send next command
+                logger.info("Send next Command")
                 writeComs(commands[index])
                 index += 1
                 window['drawing_progress'].update(round(index/totCommands)*100)
+                ready = False
                 
 
         if State == States.SETUP:
