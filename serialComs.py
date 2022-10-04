@@ -14,7 +14,7 @@ def setupComs():
     logger = logging.getLogger('Serial')
     
     try: 
-        ser = serial.Serial('/dev/ttyUSB0', 115200) # Pi: "/dev/ttyUSB0" PC: "COM3"
+        ser = serial.Serial('COM3', 115200) # Pi: "/dev/ttyUSB0" PC: "COM3"
     except:
         logger.error("Cannot open serial port")
         ser = None
@@ -30,6 +30,8 @@ def readComs():
 
 def writeComs(instruction):
     global prevInstruction, ser
+    logger = logging.getLogger('Serial')
+    logger.info("Instruction: {}".format(instruction))
     if ser is None: 
         return 0
     prevInstruction = instruction
@@ -40,6 +42,8 @@ def bufferHandler():
     # Returns -1 for serious error, 0 for idle, 1 for go for next command, 2 for motors homed
     global buffer
     print(buffer)
+    logger = logging.getLogger('Serial')
+    logger.info("Reply: {}".format(buffer))
     if buffer.startswith("E1"): # repeat last command
         writeComs(prevInstruction)
     if buffer.startswith("E5") or buffer.startswith("E0"): # over heating error

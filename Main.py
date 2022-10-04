@@ -30,7 +30,7 @@ def main(logger):
 
     # define the window layout
     input_bar = sg.Column([[Button("B_Capture", "Capture", False)], [Button("B_Draw", "Draw", False)], [Button("B_Clear", "Clear", False)], [Button("B_Setup", "Setup", True)]])
-    layout = [[input_bar, sg.pin(sg.Image(size=imgSize, filename='', key='image', visible=False)), sg.pin(sg.Output(size=(60, 30), key='Debug', visible=False)), sg.vtop(sg.Column([[Button("B_Exit", "Exit")],  [sg.ProgressBar(max_value=100, orientation='v', size=(20, 20), key='drawing_progress', visible=False)]], justification="c"))]]
+    layout = [[input_bar, sg.pin(sg.Image(size=imgSize, filename='', key='image', visible=False)), sg.pin(sg.Output(size=(60, 30), key='Debug', visible=False)), sg.vtop(sg.Column([[Button("B_Exit", "Exit")],  [sg.ProgressBar(max_value=100, orientation='v', size=(20, 20), key='drawing_progress', visible=False)]], element_justification="c"))]]
 
     # create the window and show it without the plot
     window = sg.Window('Delta Draw',
@@ -107,12 +107,14 @@ def main(logger):
         # Drawing
         if State == States.DRAWING:
             logger.info("entered Drawing state")
+            totCommands = len(commands) 
+            window['drawing_progress'].update(visible=True)
+            window['drawing_progress'].update(20)
+            # TODO: Update progress image evert few frames
             if ready: # if it is a new instruction and a move has been competed, send next command
-                totCommands = len(commands) 
-                window['drawing_progress'].update(max_value=totCommands, visible=True)
                 writeComs(commands[index])
                 index += 1
-                window['drawing_progress'].update(index)
+                window['drawing_progress'].update(round(index/totCommands)*100)
                 
 
         if State == States.SETUP:
