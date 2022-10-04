@@ -42,7 +42,7 @@ def main(logger):
 
     # --- Setup of params --- #
 
-    global snapShot
+    global snapShot, commands, index
     work_id = 0
     cap = cv2.VideoCapture(0)
     preview = True
@@ -164,7 +164,7 @@ def Img2Byte(imgPath):
     return imgbytes
 
 def captureFrame(work_id, gui_queue, frame, imgSize):
-    global snapShot
+    global snapShot, commands
     croped_img = frame[0:imgSize[0], 0:imgSize[1]]
     cv2.imwrite("snapShot.bmp", croped_img)
     automatic_brightness_and_contrast()
