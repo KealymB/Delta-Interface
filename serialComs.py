@@ -2,15 +2,18 @@ import serial
 from enum import Enum
 
 # State Variables
+global buffer, prevInstruction, ser
 buffer = ""     #Line buffer saving latest com
 prevInstruction = ""
 
 # Serial communication
-try: 
-    ser = serial.Serial('/dev/ttyUSB0', 115200)
-except:
-    ser = None
-    print("Error opening serial")
+def setupComs(): 
+    global ser
+    try: 
+        ser = serial.Serial('/dev/ttyUSB0', 115200) # Pi: "/dev/ttyUSB0" PC: "COM3"
+    except:
+        print("Error opening serial")
+        ser = None
 
 def readComs():
     global buffer, ser
@@ -22,11 +25,11 @@ def readComs():
     return 0 # return 0 if there is nothing in the serial buffer
 
 def writeComs(instruction):
-    global ser, prevInstruction
+    global prevInstruction, ser
     if ser is None: 
-        return
+        return 0
     prevInstruction = instruction
-    ser.write(instruction)
+    ser.write(instruction.encode('utf-8'))
 
 def bufferHandler():
     # Handles the buffer.

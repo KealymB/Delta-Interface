@@ -7,9 +7,9 @@ import cv2
 import numpy as np
 from enum import Enum
 from pathGen import genCommands, setParams
-from serialComs import readComs, writeComs
+from serialComs import readComs, writeComs, setupComs
 from svg2png import renderProgress
-#from bgRemover import removeBG
+from bgRemover import removeBG
 from imgAdjuster import automatic_brightness_and_contrast
 
 """
@@ -29,7 +29,7 @@ def main():
 
     # define the window layout
     input_bar = sg.Column([[Button("B_Capture", "Capture", False)], [Button("B_Draw", "Draw", False)], [Button("B_Clear", "Clear", False)], [Button("B_Setup", "Setup", True)]])
-    layout = [[input_bar, sg.pin([sg.Image(size=imgSize, filename='', key='image', visible=False), sg.ProgressBar(max_value=10, orientation='h', size=(400, 20), key='drawing_progress')]), sg.pin(sg.Output(size=(60, 30), key='Debug', visible=False)), sg.vtop(sg.Column([[Button("B_Exit", "Exit")]]))]]
+    layout = [[input_bar, sg.pin(sg.Image(size=imgSize, filename='', key='image', visible=False)), sg.pin(sg.Output(size=(60, 30), key='Debug', visible=False)), sg.vtop(sg.Column([[Button("B_Exit", "Exit")]]))]]
 
     # create the window and show it without the plot
     window = sg.Window('Delta Draw',
@@ -51,6 +51,8 @@ def main():
     homed = False   #Flag of if the motors have been homed
     ready = False   #Flag if motors are currently moving test
 
+    setupComs()     #Init coms module
+
     while True:
         # Serial Handling
         comBuffer = readComs()
@@ -60,6 +62,11 @@ def main():
         if comBuffer == 1:
             ready = True
         if comBuffer == 2:
+            window['Capture'].update(visible = True)
+            window['Setup'].update(visible = False)
+            window['Debug'].update(visible = False)
+            window['Exit'].update(visible = True)
+            State = States.IDLE
             homed = True
 
         # GUI Handling
@@ -92,11 +99,7 @@ def main():
             State = States.DRAWING
 
         if event == 'Setup':
-            window['Capture'].update(visible = True)
-            window['Setup'].update(visible = False)
-            window['Debug'].update(visible = False)
-            window['Exit'].update(visible = True)
-            State = States.IDLE
+            writeComs("HS !") # send home stepper command
 
         # Drawing
         if State == States.DRAWING:
@@ -141,7 +144,7 @@ def main():
             sg.PopupAnimated(sg.DEFAULT_BASE64_LOADING_GIF, background_color='white', time_between_frames=100, location = tuple(ti/2 for ti in windowSize))
 
 def Button(img, event, visible=True):
-    return sg.pin(sg.Button('', image_filename="GUI_Elements/{}.png".format(img), key=event, button_color=('black'), border_width=0, visible=visible))
+    return sg.pin(sg.Button('', image_filename="GUI_Elements\{}.png".format(img), key=event, button_color=('black'), border_width=0, visible=visible))
 
 def Img2Byte(imgPath):
     img = cv2.imread(imgPath)
@@ -153,7 +156,7 @@ def captureFrame(work_id, gui_queue, frame, imgSize):
     croped_img = frame[0:imgSize[0], 0:imgSize[1]]
     cv2.imwrite("snapShot.bmp", croped_img)
     automatic_brightness_and_contrast()
-    #removeBG(imgSize)
+    removeBG(imgSize)
     commands, totalPaths = genCommands()
     renderProgress(totalPaths, imgSize)
     snapShot = Img2Byte("progress.png")
