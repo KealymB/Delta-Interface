@@ -35,7 +35,7 @@ def main():
     window = sg.Window('Delta Draw',
                        layout, location=(0, 0), no_titlebar=False, element_justification='c', size=windowSize, keep_on_top=True).Finalize()
 
-    #window.Maximize()
+    window.Maximize()
 
     # --- Event Loop --- #
     global snapShot
@@ -144,7 +144,7 @@ def main():
             sg.PopupAnimated(sg.DEFAULT_BASE64_LOADING_GIF, background_color='white', time_between_frames=100, location = tuple(ti/2 for ti in windowSize))
 
 def Button(img, event, visible=True):
-    return sg.pin(sg.Button('', image_filename="GUI_Elements\{}.png".format(img), key=event, button_color=('black'), border_width=0, visible=visible))
+    return sg.pin(sg.Button('', image_filename="GUI_Elements/{}.png".format(img), key=event, button_color=('black'), border_width=0, visible=visible))
 
 def Img2Byte(imgPath):
     img = cv2.imread(imgPath)
