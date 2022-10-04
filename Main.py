@@ -120,6 +120,9 @@ def main(logger):
             window['Debug'].update(visible = True)
 
         if State == States.PREVIEW:
+            window['Capture'].update(visible = False)           # hide capture button
+            window['Draw'].update(visible = True)               # show draw button
+            window['Clear'].update(visible = True)              # show clear button
             window['image'].update(data=snapShot, size=imgSize) # show the final image
 
         if State == States.IDLE:
