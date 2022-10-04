@@ -49,7 +49,7 @@ def main():
     States = Enum('State', 'SETUP IDLE PREVIEW DRAWING ERROR')
     State = States.SETUP
     homed = False   #Flag of if the motors have been homed
-    ready = False   #Flag if motors are currently moving
+    ready = False   #Flag if motors are currently moving test
 
     while True:
         # Serial Handling
