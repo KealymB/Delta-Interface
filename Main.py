@@ -1,4 +1,5 @@
 import queue
+import logging
 import threading
 import time
 from PIL import Image
@@ -15,21 +16,21 @@ from imgAdjuster import automatic_brightness_and_contrast
 """
 GUI program for the HMI of the delta robot
 """
+def main(logger):
+    logger.info("Init")
 
-# TODO: need to adjust for image brightness and stuff for better potrace results
-
-def main():
-    windowSize = (800, 480)
     gui_queue = queue.Queue()  # queue used to communicate between the gui and long-running code
 
     # Params
     imgSize = (450, 450)
+    windowSize = (800, 480)
 
+    # GUI Theme
     sg.theme('Black')
 
     # define the window layout
     input_bar = sg.Column([[Button("B_Capture", "Capture", False)], [Button("B_Draw", "Draw", False)], [Button("B_Clear", "Clear", False)], [Button("B_Setup", "Setup", True)]])
-    layout = [[input_bar, sg.pin(sg.Image(size=imgSize, filename='', key='image', visible=False)), sg.pin(sg.Output(size=(60, 30), key='Debug', visible=False)), sg.vtop(sg.Column([[Button("B_Exit", "Exit")]]))]]
+    layout = [[input_bar, sg.pin(sg.Image(size=imgSize, filename='', key='image', visible=False)), sg.pin(sg.Output(size=(60, 30), key='Debug', visible=False)), sg.vtop(sg.Column([[Button("B_Exit", "Exit")],  [sg.ProgressBar(max_value=100, orientation='v', size=(20, 20), key='drawing_progress')]], justification="c"))]]
 
     # create the window and show it without the plot
     window = sg.Window('Delta Draw',
@@ -37,27 +38,32 @@ def main():
 
     window.Maximize()
 
-    # --- Event Loop --- #
+    logger.info("GUI Setup complete")
+
+    # --- Setup of params --- #
+
     global snapShot
     work_id = 0
     cap = cv2.VideoCapture(0)
     preview = True
     snapShot = None
-    commands = [] # Command buffer for path commands
-    index = 0     # Current position in command buffer
+    commands = []           # Command buffer for path commands
+    index = 0               # Current position in command buffer
     numPaths = 0
     States = Enum('State', 'SETUP IDLE PREVIEW DRAWING ERROR')
-    State = States.SETUP
-    homed = False   #Flag of if the motors have been homed
-    ready = False   #Flag if motors are currently moving test
+    State = States.SETUP    # Set initial state
+    homed = False           # Flag of if the motors have been homed
+    ready = False           # Flag if motors are currently moving test
 
-    setupComs()     #Init coms module
+    setupComs()             # Init coms module
 
+    # --- Event Loop --- #
     while True:
         # Serial Handling
         comBuffer = readComs()
         if comBuffer == -1:
             sg.MsgBoxError('Error reading coms')
+            logger.error("Error returned from com read: {}".format(comBuffer))
             State = States.ERROR
         if comBuffer == 1:
             ready = True
@@ -82,6 +88,7 @@ def main():
             continue
 
         if event == 'Capture':
+            logger.info("Capture Pressed")
             ret, frame = cap.read()
             thread_id = threading.Thread(target=captureFrame, args=(work_id, gui_queue, frame, imgSize), daemon=True) # Start Loader
             thread_id.start()
@@ -89,25 +96,30 @@ def main():
             State = States.PREVIEW
 
         if event == 'Clear':
+            logger.info("Clear Pressed")
             window['Capture'].update(visible = True)             # show capture button
             window['Draw'].update(visible = False)               # hide draw button
             window['Clear'].update(visible = False)              # hide clear button
             State = States.IDLE
 
         if event == 'Draw':
+            logger.info("Draw Pressed")
             print(commands)
             State = States.DRAWING
 
         if event == 'Setup':
+            logger.info("Setup Pressed")
             writeComs("HS !") # send home stepper command
 
         # Drawing
         if State == States.DRAWING:
+            logger.info("entered Drawing state")
             if ready: # if it is a new instruction and a move has been competed, send next command
                 totCommands = len(commands) 
+                window['drawing_progress'].update(max_value=totCommands)
                 writeComs(commands[index])
                 index += 1
-                window.write_event_value('update_drawing_progress', index)
+                window['drawing_progress'].update(index)
                 
 
         if State == States.SETUP:
@@ -115,9 +127,6 @@ def main():
             window['Debug'].update(visible = True)
 
         if State == States.PREVIEW:
-            window['Capture'].update(visible = False)           # hide capture button
-            window['Draw'].update(visible = True)               # show draw button
-            window['Clear'].update(visible = True)              # show clear button
             window['image'].update(data=snapShot, size=imgSize) # show the final image
 
         if State == States.IDLE:
@@ -125,6 +134,10 @@ def main():
             croped_img = frame[0:imgSize[0], 0:imgSize[1]]
             imgbytes = cv2.imencode('.png', croped_img)[1].tobytes()
             window['image'].update(data=imgbytes, size=imgSize, visible = True)
+            window['Capture'].update(visible = True)
+            window['Setup'].update(visible = False)
+            window['Debug'].update(visible = False)
+            window['Exit'].update(visible = True)
 
          # --------------- Read next message coming in from threads ---------------
         try:
@@ -136,7 +149,6 @@ def main():
             # Run at the end of a long process, can add pop up text when a process is completed (drawing? )
             completed_work_id = int(message[:message.index(' :::')])
             #window.Element('_OUTPUT2_').Update('Finished long work %s' % completed_work_id)
-            window['drawing_progress'].update(max_value=len(commands))
             work_id -= 1
             if not work_id:
                 sg.PopupAnimated(None)
@@ -167,4 +179,17 @@ def captureFrame(work_id, gui_queue, frame, imgSize):
     return
 
 if __name__ == "__main__":
-    main()
+    filename="logs.txt"
+    # clear logger file
+    open(filename, 'w').close()
+
+    # init logging
+    logging.basicConfig(filename=filename,
+                    filemode='a',
+                    format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+                    datefmt='%H:%M:%S',
+                    level=logging.DEBUG)
+
+    logger = logging.getLogger('main')
+
+    main(logger)

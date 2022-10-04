@@ -3,3 +3,4 @@ env/
 snapShot.*
 progress.*
 model.h5
+logs.txt

@@ -1,4 +1,6 @@
+from asyncio.log import logger
 import serial
+import logging
 from enum import Enum
 
 # State Variables
@@ -9,10 +11,12 @@ prevInstruction = ""
 # Serial communication
 def setupComs(): 
     global ser
+    logger = logging.getLogger('Serial')
+    
     try: 
         ser = serial.Serial('/dev/ttyUSB0', 115200) # Pi: "/dev/ttyUSB0" PC: "COM3"
     except:
-        print("Error opening serial")
+        logger.error("Cannot open serial port")
         ser = None
 
 def readComs():
