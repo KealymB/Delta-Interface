@@ -47,7 +47,7 @@ def main():
     index = 0     # Current position in command buffer
     numPaths = 0
     States = Enum('State', 'HOMING IDLE PREVIEW DRAWING ERROR')
-    State = States.HOMING
+    State = States.IDLE
 
     while True:
         # Serial Handling
