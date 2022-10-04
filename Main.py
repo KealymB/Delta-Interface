@@ -7,9 +7,9 @@ import cv2
 import numpy as np
 from enum import Enum
 from pathGen import genCommands, setParams
-from serialComs import readComs, handleComs
+from serialComs import readComs, writeComs
 from svg2png import renderProgress
-from bgRemover import removeBG
+#from bgRemover import removeBG
 from imgAdjuster import automatic_brightness_and_contrast
 
 """
@@ -28,14 +28,14 @@ def main():
     sg.theme('Black')
 
     # define the window layout
-    input_bar = sg.Column([[Button("B_Capture", "Capture")], [Button("B_Draw", "Draw", False)], [Button("B_Clear", "Clear", False)]])
-    layout = [[input_bar, sg.Column([[sg.Image(size=imgSize, filename='', key='image')]]), sg.Column([[Button("B_Exit", "Exit")]], vertical_alignment='t')]]
+    input_bar = sg.Column([[Button("B_Capture", "Capture", False)], [Button("B_Draw", "Draw", False)], [Button("B_Clear", "Clear", False)], [Button("B_Setup", "Setup", True)]])
+    layout = [[input_bar, sg.pin([sg.Image(size=imgSize, filename='', key='image', visible=False), sg.ProgressBar(max_value=10, orientation='h', size=(400, 20), key='drawing_progress')]), sg.pin(sg.Output(size=(60, 30), key='Debug', visible=False)), sg.vtop(sg.Column([[Button("B_Exit", "Exit")]]))]]
 
     # create the window and show it without the plot
     window = sg.Window('Delta Draw',
                        layout, location=(0, 0), no_titlebar=False, element_justification='c', size=windowSize, keep_on_top=True).Finalize()
 
-    window.Maximize()
+    #window.Maximize()
 
     # --- Event Loop --- #
     global snapShot
@@ -46,24 +46,35 @@ def main():
     commands = [] # Command buffer for path commands
     index = 0     # Current position in command buffer
     numPaths = 0
-    States = Enum('State', 'HOMING IDLE PREVIEW DRAWING ERROR')
-    State = States.HOMING
+    States = Enum('State', 'SETUP IDLE PREVIEW DRAWING ERROR')
+    State = States.SETUP
+    homed = False   #Flag of if the motors have been homed
+    ready = False   #Flag if motors are currently moving
 
     while True:
         # Serial Handling
-        readComs()
-
-        # Instruction Handling
-        if State == States.DRAWING:
-            if handleComs(commands[index]) > 0: # if it is a new instruction and a move has been competed, send next command
-                index += 1
+        comBuffer = readComs()
+        if comBuffer == -1:
+            sg.MsgBoxError('Error reading coms')
+            State = States.ERROR
+        if comBuffer == 1:
+            ready = True
+        if comBuffer == 2:
+            homed = True
 
         # GUI Handling
         event, values = window.read(timeout=100)
         if event == 'Exit' or event == sg.WIN_CLOSED:
             return
 
-        if event == 'Capture' and State != States.HOMING:
+        if event.startswith('update_'):
+            print(f'event: {event}, value: {values[event]}')
+            key_to_update = event[len('update_'):]
+            window[key_to_update].update(values[event])
+            window.refresh()
+            continue
+
+        if event == 'Capture':
             ret, frame = cap.read()
             thread_id = threading.Thread(target=captureFrame, args=(work_id, gui_queue, frame, imgSize), daemon=True) # Start Loader
             thread_id.start()
@@ -80,8 +91,25 @@ def main():
             print(commands)
             State = States.DRAWING
 
-        if State == States.HOMING:
-            window['image'].update(data=Img2Byte("GUI_Elements/homing.png"), size=imgSize)
+        if event == 'Setup':
+            window['Capture'].update(visible = True)
+            window['Setup'].update(visible = False)
+            window['Debug'].update(visible = False)
+            window['Exit'].update(visible = True)
+            State = States.IDLE
+
+        # Drawing
+        if State == States.DRAWING:
+            if ready: # if it is a new instruction and a move has been competed, send next command
+                totCommands = len(commands) 
+                writeComs(commands[index])
+                index += 1
+                window.write_event_value('update_drawing_progress', index)
+                
+
+        if State == States.SETUP:
+            window['image'].update(visible = False)
+            window['Debug'].update(visible = True)
 
         if State == States.PREVIEW:
             window['Capture'].update(visible = False)           # hide capture button
@@ -93,7 +121,7 @@ def main():
             ret, frame = cap.read()
             croped_img = frame[0:imgSize[0], 0:imgSize[1]]
             imgbytes = cv2.imencode('.png', croped_img)[1].tobytes()
-            window['image'].update(data=imgbytes, size=imgSize)
+            window['image'].update(data=imgbytes, size=imgSize, visible = True)
 
          # --------------- Read next message coming in from threads ---------------
         try:
@@ -105,6 +133,7 @@ def main():
             # Run at the end of a long process, can add pop up text when a process is completed (drawing? )
             completed_work_id = int(message[:message.index(' :::')])
             #window.Element('_OUTPUT2_').Update('Finished long work %s' % completed_work_id)
+            window['drawing_progress'].update(max_value=len(commands))
             work_id -= 1
             if not work_id:
                 sg.PopupAnimated(None)
@@ -112,7 +141,7 @@ def main():
             sg.PopupAnimated(sg.DEFAULT_BASE64_LOADING_GIF, background_color='white', time_between_frames=100, location = tuple(ti/2 for ti in windowSize))
 
 def Button(img, event, visible=True):
-    return sg.Button('', image_filename="GUI_Elements/{}.png".format(img), key=event, button_color=('black'), border_width=0, visible=visible)
+    return sg.pin(sg.Button('', image_filename="GUI_Elements/{}.png".format(img), key=event, button_color=('black'), border_width=0, visible=visible))
 
 def Img2Byte(imgPath):
     img = cv2.imread(imgPath)
@@ -124,7 +153,7 @@ def captureFrame(work_id, gui_queue, frame, imgSize):
     croped_img = frame[0:imgSize[0], 0:imgSize[1]]
     cv2.imwrite("snapShot.bmp", croped_img)
     automatic_brightness_and_contrast()
-    removeBG(imgSize)
+    #removeBG(imgSize)
     commands, totalPaths = genCommands()
     renderProgress(totalPaths, imgSize)
     snapShot = Img2Byte("progress.png")

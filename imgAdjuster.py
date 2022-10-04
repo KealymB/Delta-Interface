@@ -1,8 +1,8 @@
 import cv2
 import numpy as np
 
-def automatic_brightness_and_contrast():
-    image = cv2.imread('snapShot.bmp')
+def automatic_brightness_and_contrast(imgName= "snapShot.bmp"):
+    image = cv2.imread(imgName)
     clip_hist_percent=1
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
@@ -36,6 +36,6 @@ def automatic_brightness_and_contrast():
     beta = -minimum_gray * alpha
     
     auto_result = cv2.convertScaleAbs(image, alpha=alpha, beta=beta)
-    cv2.imwrite('snapShot.bmp', auto_result)
+    cv2.imwrite(imgName, auto_result)
 
 

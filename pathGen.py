@@ -9,6 +9,12 @@ drawingHeight = 140     # height in mm
 penLiftHeight = 170     # lifted pen height in mm
 penDrawingHeight = 150  # Drawing height in mm
 
+# Potrace params
+global turdsize, alphamax, opttolerance
+turdsize = 10 # suppress speckles of up to this many pixels.
+alphamax = 1.1 # The default value  is  1.  The  smaller  this  value,  the more sharp corners will be produced. If this parameter is 0, then no smoothing will be performed and the output is a polygon. If this parameter  is  greater  than  4/3,  then all corners are suppressed and the output is completely smooth.
+opttolerance = 1 #Larger values  allow  more consecutive Bezier curve segments to be joined together in a single segment, at the expense of accuracy.
+
 def setParams(drawingWidth = 140, drawingHeight = 140, penLiftHeight = 170, penDownHeight = 150):
     drawingWidth = drawingWidth
     drawingHeight = drawingHeight
@@ -17,8 +23,9 @@ def setParams(drawingWidth = 140, drawingHeight = 140, penLiftHeight = 170, penD
 
 
 def genCommands(image_name = "snapShot"):
+    global turdsize, alphamax, opttolerance
     # convert bitmap image to svg file
-    os.system("potrace --svg {image_name}.bmp -o {image_name}.svg".format(image_name=image_name)) 
+    os.system("potrace --svg {image_name}.bmp -o {image_name}.svg -t {turdsize} -a {alphamax} -O {tolerance}".format(image_name = image_name, turdsize=turdsize, alphamax=alphamax, tolerance=opttolerance))
 
     # Calculate scaling and offsets needed to fit svg onto drawing platform
     im = Image.open('{}.bmp'.format(image_name))
