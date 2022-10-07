@@ -50,7 +50,7 @@ def bufferHandler():
         return -1
     if buffer.startswith("A"):
         return 1
-    if buffer.startswith("I2"):
+    if buffer.startswith("I3"):
         return 2
     return 0
     
