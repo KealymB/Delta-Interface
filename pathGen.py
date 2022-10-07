@@ -1,5 +1,6 @@
 from PIL import Image
 from svgelements import SVG
+import numpy as np
 import os
 
 # Drawing params
@@ -9,23 +10,30 @@ drawingHeight = 140     # height in mm
 penLiftHeight = 170     # lifted pen height in mm
 penDrawingHeight = 150  # Drawing height in mm
 
-# Potrace params
-global turdsize, alphamax, opttolerance
-turdsize = 10 # suppress speckles of up to this many pixels.
-alphamax = 1.1 # The default value  is  1.  The  smaller  this  value,  the more sharp corners will be produced. If this parameter is 0, then no smoothing will be performed and the output is a polygon. If this parameter  is  greater  than  4/3,  then all corners are suppressed and the output is completely smooth.
-opttolerance = 1 #Larger values  allow  more consecutive Bezier curve segments to be joined together in a single segment, at the expense of accuracy.
-
-def setParams(drawingWidth = 140, drawingHeight = 140, penLiftHeight = 170, penDownHeight = 150):
+def setParams(drawingWidth = 140, drawingHeight = 140, penLiftHeight = 170, penDrawingHeight = 150):
     drawingWidth = drawingWidth
     drawingHeight = drawingHeight
     penLiftHeight = penLiftHeight
     penDrawingHeight = penDrawingHeight
 
+def genSVG(image_name = "snapShot"):
+    # generates an svg image from a bitmap image
 
-def genCommands(image_name = "snapShot"):
-    global turdsize, alphamax, opttolerance
+    # Potrace params
+    turdsize = 10 # suppress speckles of up to this many pixels.
+    alphamax = 1.1 # The default value  is  1.  The  smaller  this  value,  the more sharp corners will be produced. If this parameter is 0, then no smoothing will be performed and the output is a polygon. If this parameter  is  greater  than  4/3,  then all corners are suppressed and the output is completely smooth.
+    opttolerance = 1 #Larger values  allow  more consecutive Bezier curve segments to be joined together in a single segment, at the expense of accuracy.
+
     # convert bitmap image to svg file
     os.system("potrace --svg {image_name}.bmp -o {image_name}.svg -t {turdsize} -a {alphamax} -O {tolerance}".format(image_name = image_name, turdsize=turdsize, alphamax=alphamax, tolerance=opttolerance))
+
+
+
+def genCommands(image_name = None):
+    # Generate path commands (LM, PL, PD, CB) from SVG files
+    if image_name is None:
+        #genSVG()
+        image_name = "snapShot"
 
     # Calculate scaling and offsets needed to fit svg onto drawing platform
     im = Image.open('{}.bmp'.format(image_name))
@@ -84,9 +92,11 @@ def genCommands(image_name = "snapShot"):
                 endX = round(float(endP[0])*xScale - xOffset, 2)
                 endY = round(float(endP[1])*yScale - yOffset, 2)
 
-                interpDist = 2 # need to calculate this
+                commands.append("CB {} {} {} {} {} {} {} {}!".format(startX, startY, c1X, c1Y, c2X, c2Y, endX, endY)) # perform linear move (lifted pen)
 
-                commands.append("CB {} {} {} {} {} {} {} {} {}!".format(startX, startY, c1X, c1Y, c2X, c2Y, endX, endY, interpDist)) # perform linear move (lifted pen)
-
+    with open('commands.txt', 'w') as f:
+        for line in commands:
+            f.write(f"{line}\n")
+            
     return commands, len(paths)
         

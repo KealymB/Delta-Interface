@@ -3,13 +3,18 @@ from svgpathtools import svg2paths2, wsvg, Path, Line, CubicBezier
 from svgelements import SVG
 from reportlab.graphics import renderPM
 from svglib.svglib import svg2rlg
+import logging
 
-def renderProgress(progress, imgSize):
-    paths, attributes, svg_attributes = svg2paths2('snapShot.svg')
+def renderProgress(imgSize, img_name = "snapShot.svg", progress = None):
+    # Generates progress image from svg
+    logger = logging.getLogger('gen')
+    paths, attributes, svg_attributes = svg2paths2(img_name)
 
-    svg = SVG.parse('snapShot.svg')
+    svg = SVG.parse(img_name)
     elements = list(svg.elements())
     paths = elements[0][1]
+    if progress is None:
+        progress = len(elements[0])
 
     previewPath = []
     segments = Path()
