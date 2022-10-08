@@ -53,7 +53,7 @@ def main(logger):
     index = 0               # Current position in command buffer
     numPaths = 0
     States = Enum('State', 'SETUP IDLE PREVIEW DRAWING ERROR')
-    State = States.IDLE    # Set initial state
+    State = States.SETUP    # Set initial state
     homed = False           # Flag of if the motors have been homed
     ready = False           # Flag if motors are currently moving test
 
@@ -176,6 +176,7 @@ def main(logger):
 
         if State == States.PREVIEW:
             window['Capture'].update(visible = False)           # hide capture button
+            window['Browse'].update(visible = False)            # hide browse button
             window['Draw'].update(visible = True)               # show draw button
             window['Clear'].update(visible = True)              # show clear button
             window['image'].update(data=snapShot, size=imgSize) # show the final image
