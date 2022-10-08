@@ -13,6 +13,7 @@ from serialComs import readComs, writeComs, setupComs
 from svg2png import renderProgress
 from bgRemover import removeBG
 from imgAdjuster import automatic_brightness_and_contrast
+from tkinter.filedialog import askopenfilename
 
 """
 GUI program for the HMI of the delta robot
@@ -30,12 +31,12 @@ def main(logger):
     sg.theme('Black')
 
     # define the window layout
-    input_bar = sg.Column([[Button("B_Capture", "Capture", False)], [Button("B_Draw", "Draw", False)], [Button("B_Cancel", "Cancel", False)], [Button("B_Clear", "Clear", False)], [Button("B_Setup", "Setup", True)]])
+    input_bar = sg.Column([[Button("B_Capture", "Capture", False)], [Button("B_Draw", "Draw", False)], [Button("B_Cancel", "Cancel", False)], [Button("B_Clear", "Clear", False)], [Button("B_Setup", "Setup", True)], [Button("B_Browse", "Browse", False)]])
     layout = [[input_bar, sg.pin(sg.Image(size=imgSize, filename='', key='image', visible=False)), sg.pin(sg.Output(size=(60, 30), key='Debug', visible=False)), sg.vtop(sg.Column([[Button("B_Exit", "Exit")],  [sg.ProgressBar(max_value=100, orientation='v', size=(20, 20), key='drawing_progress', visible=False)]], element_justification="c"))]]
 
     # create the window and show it without the plot
     window = sg.Window('Delta Draw',
-                       layout, location=(0, 0), no_titlebar=False, element_justification='c', size=windowSize, keep_on_top=True).Finalize()
+                       layout, location=(0, 0), no_titlebar=False, element_justification='c', size=windowSize).Finalize()
 
     window.Maximize()
 
@@ -69,6 +70,7 @@ def main(logger):
             ready = True
         if comBuffer == 2:
             window['Capture'].update(visible = True)
+            window['Browse'].update(visible = True)
             window['Setup'].update(visible = False)
             window['Debug'].update(visible = False)
             window['Exit'].update(visible = True)
@@ -128,6 +130,20 @@ def main(logger):
             logger.info("Setup Pressed")
             writeComs("HS !") # send home stepper command
 
+        if event == "Browse":
+            logger.info("Browse Pressed")
+            filename = askopenfilename(initialdir="testImages")
+
+            if filename:
+                img = cv2.imread(filename)
+                img_resized = cv2.resize(img, imgSize)        #resize to size of webcam
+                thread_id = threading.Thread(target=generatePreview, args=(work_id, gui_queue, img_resized, imgSize), daemon=True) # Start Loader
+                thread_id.start()
+                work_id = work_id + 1 if work_id < 19 else 0
+                State = States.PREVIEW
+
+            logger.info("Loaded: " + filename)
+
         # Drawing
         if State == States.DRAWING:
             totCommands = len(commands) 
@@ -170,6 +186,7 @@ def main(logger):
             imgbytes = cv2.imencode('.png', croped_img)[1].tobytes()
             window['image'].update(data=imgbytes, size=imgSize, visible = True)
             window['Capture'].update(visible = True)
+            window['Browse'].update(visible = True)
             window['Setup'].update(visible = False)
             window['Debug'].update(visible = False)
             window['Exit'].update(visible = True)
