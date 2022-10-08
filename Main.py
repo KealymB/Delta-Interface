@@ -98,6 +98,9 @@ def main(logger):
             Snapshot = None
             commands = []
             window['drawing_progress'].update(visible=False)
+            window['Draw'].update(visible = False)               # hide draw button
+            window['Clear'].update(visible = False)              # hide clear button
+            window['Cancel'].update(visible = False)             # hide cancel button
 
             State = States.IDLE
 
