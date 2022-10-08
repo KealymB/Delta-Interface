@@ -85,16 +85,11 @@ def main(logger):
             logger.info("Capture Pressed")
 
             ret, frame = cap.read() # Read web cam
-            croped_img = frame[0:imgSize[0], 0:imgSize[1]] # crop image to size
-            cv2.imwrite("snapShot.bmp", croped_img) # write image to file
 
-            automatic_brightness_and_contrast() # normalise image 
-            removeBG(imgSize) # replace background with white
-            genSVG() # generage the svg from the image
-            renderProgress(imgSize) # render the svg to a file
-
-            snapShot = Img2Byte("progress.png") # render svg to screen
-
+            thread_id = threading.Thread(target=generatePreview, args=(work_id, gui_queue, frame, imgSize), daemon=True) # Start Loader
+            thread_id.start()
+            work_id = work_id + 1 if work_id < 19 else 0
+            
             State = States.PREVIEW
 
         if event == 'Cancel':
@@ -122,6 +117,7 @@ def main(logger):
             thread_id = threading.Thread(target=generateDrawing, args=(work_id, gui_queue), daemon=True) # Start Loader
             thread_id.start()
             work_id = work_id + 1 if work_id < 19 else 0
+
             State = States.DRAWING
 
         if event == 'Setup':
@@ -203,6 +199,22 @@ def generateDrawing(work_id, gui_queue):
     global commands
 
     commands, totalPaths = genCommands()
+    gui_queue.put('{} ::: done'.format(work_id))
+
+    return
+
+def generatePreview(work_id, gui_queue, frame, imgSize):
+    global snapShot
+
+    croped_img = frame[0:imgSize[0], 0:imgSize[1]] # crop image to size
+    cv2.imwrite("snapShot.bmp", croped_img) # write image to file
+
+    automatic_brightness_and_contrast() # normalise image 
+    removeBG(imgSize) # replace background with white
+    genSVG() # generage the svg from the image
+    renderProgress(imgSize) # render the svg to a file
+    snapShot = Img2Byte("progress.png") # render svg to screen
+
     gui_queue.put('{} ::: done'.format(work_id))
 
     return
