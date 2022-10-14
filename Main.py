@@ -53,7 +53,7 @@ def main(logger):
     index = 0               # Current position in command buffer
     numPaths = 0
     States = Enum('State', 'SETUP IDLE PREVIEW DRAWING ERROR')
-    State = States.SETUP    # Set initial state
+    State = States.IDLE    # Set initial state
     homed = False           # Flag of if the motors have been homed
     ready = False           # Flag if motors are currently moving test
 
@@ -135,38 +135,46 @@ def main(logger):
             filename = askopenfilename(initialdir="testImages")
 
             if filename:
+                logger.info("Loaded: " + filename)
                 img = cv2.imread(filename)
-                img_resized = cv2.resize(img, imgSize)        #resize to size of webcam
+                img_resized = cv2.resize(img, imgSize)
+
                 thread_id = threading.Thread(target=generatePreview, args=(work_id, gui_queue, img_resized, imgSize), daemon=True) # Start Loader
                 thread_id.start()
                 work_id = work_id + 1 if work_id < 19 else 0
-                State = States.PREVIEW
 
-            logger.info("Loaded: " + filename)
+                State = States.PREVIEW
 
         # Drawing
         if State == States.DRAWING:
             totCommands = len(commands) 
-            window['drawing_progress'].update(visible=True)
-            if ready: # if it is a new instruction and a move has been competed, send next command
-                prevIndex = None
-                logger.info("Sending next Command")
-                writeComs(commands[index])
-                index += 1
-                progress_normalized = round(index/totCommands)*100
-                window['drawing_progress'].update(progress_normalized)
+            if (totCommands != 0):
+                window['drawing_progress'].update(visible=True)
+                if ready: # if it is a new instruction and a move has been competed, send next command
+                    logger.info("Sending next Command")
+                    writeComs(commands[index])
+                    index += 1
+                    progress_normalized = round((index/totCommands)*100)
+                    logger.info("Progress: {}".format(progress_normalized))
 
-                time_per_command = 2 # Seconds
-                time_remaining = (totCommands - index) * time_per_command 
+                    window['drawing_progress'].update(progress_normalized)
 
-                if progress_normalized % 2 == 0 and prevIndex is not progress_normalized:
-                    logger.info("Updated preview")
-                    # todo: move this into the loading function
-                    prevIndex = progress_normalized
-                    renderProgress(imgSize, progress=index) # render the svg to a file
-                    snapShot = Img2Byte("progress.png")     # render svg to screen
+                    time_per_command = 2 # Seconds
+                    time_remaining = (totCommands - index) * time_per_command 
 
-                ready = False
+                    # TODO: Implement Timer
+                    # TODO: Implement Image progress? 
+
+                    # if progress_normalized % 2 == 0 and prevIndex is not progress_normalized:
+                    #     logger.info("Updated preview")
+                    #     # todo: move this into the loading function
+                    #     thread_id = threading.Thread(target=generateProgress(), args=(work_id, gui_queue, imgSize, index), daemon=True) # Start Loader
+                    #     thread_id.start()
+                    #     work_id = work_id + 1 if work_id < 19 else 0
+
+                    #     snapShot = Img2Byte("progress.png")     # render svg to screen
+
+                    ready = False
                 
 
         if State == States.SETUP:
@@ -216,6 +224,16 @@ def Img2Byte(imgPath):
     return imgbytes
 
 
+def generateProgress(work_id, gui_queue, imgSize, progress):
+    # renders progress image
+    if progress == 0: return; # dont render preview if progress is 0
+
+    renderProgress(imgSize=imgSize, progress=progress) # render the svg to a file
+    snapShot = Img2Byte("progress.png")     # render svg to screen
+
+    gui_queue.put('{} ::: done'.format(work_id))
+    return
+
 def generateDrawing(work_id, gui_queue):
     global commands
 
@@ -231,7 +249,7 @@ def generatePreview(work_id, gui_queue, frame, imgSize):
     cv2.imwrite("snapShot.bmp", croped_img) # write image to file
 
     automatic_brightness_and_contrast() # normalise image 
-    #removeBG(imgSize) # replace background with white
+    removeBG(imgSize) # replace background with white
     genSVG() # generage the svg from the image
     renderProgress(imgSize) # render the svg to a file
     snapShot = Img2Byte("progress.png") # render svg to screen

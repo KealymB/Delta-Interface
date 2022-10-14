@@ -4,17 +4,11 @@ import numpy as np
 import os
 
 # Drawing params
-drawingWidth = 140      # width in mm
-drawingHeight = 140     # height in mm
+drawingWidth = 100      # width in mm
+drawingHeight = 100     # height in mm
 
-penLiftHeight = 170     # lifted pen height in mm
-penDrawingHeight = 150  # Drawing height in mm
-
-def setParams(drawingWidth = 140, drawingHeight = 140, penLiftHeight = 170, penDrawingHeight = 150):
-    drawingWidth = drawingWidth
-    drawingHeight = drawingHeight
-    penLiftHeight = penLiftHeight
-    penDrawingHeight = penDrawingHeight
+penLiftHeight = 165     # lifted pen height in mm
+penDrawingHeight = 160  # Drawing height in mm
 
 def genSVG(image_name = "snapShot"):
     # generates an svg image from a bitmap image
