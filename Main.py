@@ -148,7 +148,6 @@ def main(logger):
         if State == States.DRAWING:
             totCommands = len(commands) 
             window['drawing_progress'].update(visible=True)
-            # TODO: Update progress image evert few frames
             if ready: # if it is a new instruction and a move has been competed, send next command
                 prevIndex = None
                 logger.info("Sending next Command")
@@ -162,7 +161,7 @@ def main(logger):
 
                 if progress_normalized % 2 == 0 and prevIndex is not progress_normalized:
                     logger.info("Updated preview")
-
+                    # todo: move this into the loading function
                     prevIndex = progress_normalized
                     renderProgress(imgSize, progress=index) # render the svg to a file
                     snapShot = Img2Byte("progress.png")     # render svg to screen
@@ -232,7 +231,7 @@ def generatePreview(work_id, gui_queue, frame, imgSize):
     cv2.imwrite("snapShot.bmp", croped_img) # write image to file
 
     automatic_brightness_and_contrast() # normalise image 
-    removeBG(imgSize) # replace background with white
+    #removeBG(imgSize) # replace background with white
     genSVG() # generage the svg from the image
     renderProgress(imgSize) # render the svg to a file
     snapShot = Img2Byte("progress.png") # render svg to screen
