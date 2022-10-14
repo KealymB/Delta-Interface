@@ -18,6 +18,7 @@ from tkinter.filedialog import askopenfilename
 """
 GUI program for the HMI of the delta robot
 """
+
 def main(logger):
     logger.info("Init")
 
