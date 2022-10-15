@@ -1,7 +1,6 @@
 import queue
 import logging
 import threading
-import time
 from tracemalloc import Snapshot
 from PIL import Image
 import PySimpleGUI as sg
@@ -10,8 +9,8 @@ import numpy as np
 from enum import Enum
 from pathGen import genSVG, genCommands
 from serialComs import readComs, writeComs, setupComs
-from svg2png import renderProgress
-from bgRemover import removeBG
+from svg2png import renderProgress, renderPreview
+#from bgRemover import removeBG
 from imgAdjuster import automatic_brightness_and_contrast
 from tkinter.filedialog import askopenfilename
 
@@ -39,7 +38,7 @@ def main(logger):
     window = sg.Window('Delta Draw',
                        layout, location=(0, 0), no_titlebar=False, element_justification='c', size=windowSize).Finalize()
 
-    window.Maximize()
+    #window.Maximize()
 
     logger.info("GUI Setup complete")
 
@@ -48,6 +47,7 @@ def main(logger):
     global snapShot, commands, index
     work_id = 0
     cap = cv2.VideoCapture(0)
+    logger.info(cap);
     preview = True
     snapShot = None
     commands = []           # Command buffer for path commands
@@ -229,7 +229,7 @@ def generateProgress(work_id, gui_queue, imgSize, progress):
     # renders progress image
     if progress == 0: return; # dont render preview if progress is 0
 
-    renderProgress(imgSize=imgSize, progress=progress) # render the svg to a file
+    renderPreview(imgSize=imgSize, progress=progress) # render the svg to a file
     snapShot = Img2Byte("progress.png")     # render svg to screen
 
     gui_queue.put('{} ::: done'.format(work_id))
@@ -247,12 +247,13 @@ def generatePreview(work_id, gui_queue, frame, imgSize):
     global snapShot
 
     croped_img = frame[0:imgSize[0], 0:imgSize[1]] # crop image to size
-    cv2.imwrite("snapShot.bmp", croped_img) # write image to file
+    flipped_img = cv2.flip(croped_img, 0) #vertically flips image (0: vertical; 1: horizontal; -1: both)
+    cv2.imwrite("snapShot.bmp", flipped_img) # write image to file
 
-    automatic_brightness_and_contrast() # normalise image 
-    removeBG(imgSize) # replace background with white
-    genSVG() # generage the svg from the image
-    renderProgress(imgSize) # render the svg to a file
+    automatic_brightness_and_contrast() # normalize image 
+    #removeBG(imgSize) # replace background with white
+    genSVG() # generate the svg from the image
+    renderPreview(imgSize) # render the svg to a file
     snapShot = Img2Byte("progress.png") # render svg to screen
 
     gui_queue.put('{} ::: done'.format(work_id))

@@ -5,9 +5,37 @@ from reportlab.graphics import renderPM
 from svglib.svglib import svg2rlg
 import logging
 
+
+def renderPreview(imgSize=(450, 450), img_name = "snapShot.svg"):
+    # Generates preview image from svg
+    logger = logging.getLogger('gen')
+
+    logger.info("Generating Progress Image")
+
+    paths, attributes, svg_attributes = svg2paths2(img_name)
+
+    logger.info("Loaded Paths")
+
+    wsvg(paths, filename='progress.svg')
+    
+    logger.info("Generated Preview paths")
+
+    drawing = svg2rlg("progress.svg")
+
+    renderPM.drawToFile(drawing, "progress.png", fmt="PNG")
+
+    logger.info("Drawn to progress.png")
+    
+    img = cv2.imread("progress.png")
+    img_resized = cv2.resize(img, imgSize)
+    cv2.imwrite("progress.png", img_resized)
+
+    logger.info("Resized image")
+
+
 def renderProgress(imgSize, img_name = "snapShot.svg", progress = None):
     # Generates progress image from svg
-    logger = logging.getLogger('gen')
+    logger = logging.getLogger('imgGen')
     logger.info("Generating Progress Image")
     paths, attributes, svg_attributes = svg2paths2(img_name)
     logger.info("Loaded Paths")
@@ -117,7 +145,7 @@ def renderProgress(imgSize, img_name = "snapShot.svg", progress = None):
 
     logger.info("Generated Preview paths")
 
-    wsvg(previewPath, filename='progress.svg')
+    wsvg(paths, filename='progress.svg')
 
     logger.info("Saved to progress.svg")
 

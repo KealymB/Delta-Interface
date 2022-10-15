@@ -1,4 +1,3 @@
-from asyncio.log import logger
 import serial
 import logging
 from enum import Enum
@@ -14,7 +13,7 @@ def setupComs():
     logger = logging.getLogger('Serial')
     
     try: 
-        ser = serial.Serial('/dev/ttyUSB0', 115200) # Pi: "/dev/ttyUSB0" PC: "COM3"
+        ser = serial.Serial('COM3', 115200) # Pi: "/dev/ttyUSB0" PC: "COM3"
     except:
         logger.error("Cannot open serial port")
         ser = None
