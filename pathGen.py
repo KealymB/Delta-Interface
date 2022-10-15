@@ -4,6 +4,7 @@ from svgelements import SVG
 import numpy as np
 import os
 import logging
+import cv2
 
 
 # conversions for Points to Pixels
@@ -23,10 +24,18 @@ def genSVG(image_name = "snapShot"):
     # Potrace params
     turdsize = 30 # suppress speckles of up to this many pixels.
     alphamax = 1.1 # The default value  is  1.  The  smaller  this  value,  the more sharp corners will be produced. If this parameter is 0, then no smoothing will be performed and the output is a polygon. If this parameter  is  greater  than  4/3,  then all corners are suppressed and the output is completely smooth.
-    opttolerance = 10 #Larger values  allow  more consecutive Bezier curve segments to be joined together in a single segment, at the expense of accuracy.
+    opttolerance = 100 #Larger values  allow  more consecutive Bezier curve segments to be joined together in a single segment, at the expense of accuracy.
 
-    # attempt to use mkbitmap
-    #os.system("mkbitmap -f 2 -s 2 -t 0.48 -o {image_name}_mk.bmp {image_name}.bmp".format(image_name))
+    # attempt to find edges
+    # img = cv2.imread("{}.bmp".format(image_name))
+    # edges = cv2.Canny(img,100,200)
+    # cv2.imwrite("{}_de.bmp".format(image_name), edges)
+    # it wraps around when drawing so no good
+    # use mkbitmap
+    # os.system("mkbitmap {}.bmp -f 200 -s 2 -t 0.60".format(image_name))
+
+    # im = Image.open("{}.pbm".format(image_name))
+    # im.save("{}_de.bmp".format(image_name))
 
     # convert bitmap image to svg file
     os.system("potrace --svg {image_name}.bmp -o {image_name}.svg -t {turdsize} -a {alphamax} -O {tolerance}".format(image_name = image_name, turdsize=turdsize, alphamax=alphamax, tolerance=opttolerance))
