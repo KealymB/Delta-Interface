@@ -20,11 +20,15 @@ penDrawingHeight = 160 # Drawing height in mm
 
 def genSVG(image_name = "snapShot"):
     # generates an svg image from a bitmap image
+    logger = logging.getLogger('pathGen')
 
     # Potrace params
     turdsize = 30 # suppress speckles of up to this many pixels.
-    alphamax = 1.1 # The default value  is  1.  The  smaller  this  value,  the more sharp corners will be produced. If this parameter is 0, then no smoothing will be performed and the output is a polygon. If this parameter  is  greater  than  4/3,  then all corners are suppressed and the output is completely smooth.
+    alphamax = 1.2 # The default value  is  1.  The  smaller  this  value,  the more sharp corners will be produced. If this parameter is 0, then no smoothing will be performed and the output is a polygon. If this parameter  is  greater  than  4/3,  then all corners are suppressed and the output is completely smooth.
     opttolerance = 100 #Larger values  allow  more consecutive Bezier curve segments to be joined together in a single segment, at the expense of accuracy.
+
+    logger.info("Generating svg")
+    logger.info("TurdSize: {}, AlphaMax: {}, Op: {}".format(turdsize, alphamax, opttolerance))
 
     # attempt to find edges
     # img = cv2.imread("{}.bmp".format(image_name))
@@ -40,6 +44,7 @@ def genSVG(image_name = "snapShot"):
     # convert bitmap image to svg file
     os.system("potrace --svg {image_name}.bmp -o {image_name}.svg -t {turdsize} -a {alphamax} -O {tolerance}".format(image_name = image_name, turdsize=turdsize, alphamax=alphamax, tolerance=opttolerance))
 
+    logger.info("Generated SVG successfully")
 
 
 def genCommands(image_name = None):
@@ -48,6 +53,8 @@ def genCommands(image_name = None):
     if image_name is None:
         #genSVG()
         image_name = "snapShot"
+
+    logger.info("Generating Commands")
 
     # Calculate scaling and offsets needed to fit svg onto drawing platform
     im = Image.open('{}.bmp'.format(image_name))
@@ -58,8 +65,6 @@ def genCommands(image_name = None):
 
     width = width * pt2px
     height = height * pt2px
-
-    logger.info("Image Width: {}, Height: {}".format(width, height))
 
     logger.info("Image Width: {}, Height: {}".format(width, height))
 
@@ -87,10 +92,8 @@ def genCommands(image_name = None):
     def translateY(y):
         return round((float(y) - yOffset)*yScale, 2)
 
-
     for i in range(len(paths)):
         for path in paths[i]:
-            logger.info(path)
             if "M" in str(path).upper(): # Lifted move
                 line = str(path).split(" ")
                 coords = line[1].split(",")
@@ -133,13 +136,13 @@ def genCommands(image_name = None):
                 commands.append("CB {} {} {} {} {} {} {} {}!".format(startX, startY, c1X, c1Y, c2X, c2Y, endX, endY)) # perform linear move (lifted pen)
 
 
-    logger.info("Generated Commands")
+    logger.info("Generated Commands Successfully")
 
     with open('commands.txt', 'w') as f:
         for line in commands:
             f.write(f"{line}\n")
 
-    logger.info("Wrote Commands")
+    logger.info("Wrote Commands to file Successfully")
             
     return commands, len(paths)
         
