@@ -154,7 +154,8 @@ def main(logger):
             totCommands = len(commands)
             if (totCommands != 0):
                 window['drawing_progress'].update(visible=True)
-                window['Draw'].update(visible = False) # hide draw button               
+                window['Draw'].update(visible = False)          # hide draw button     
+                window["remainingTime"].update(visible=True)    # Show Text          
                 if ready: # if it is a new instruction and a move has been competed, send next command
                     if index < totCommands: 
                         logger.info("Sending next Command, index: {}".format(index))
