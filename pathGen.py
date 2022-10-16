@@ -15,17 +15,19 @@ px2pt = 0.75
 drawingWidth = 120 * px2pt     # width in mm
 drawingHeight = 120 * px2pt  # height in mm
 
-penLiftHeight = 165    # lifted pen height in mm
-penDrawingHeight = 160 # Drawing height in mm
+penLiftHeight = 156    # lifted pen height in mm
+penDrawingHeight = 154 # Drawing height in mm
+
+minCubicLength = 2 # minimum cubic length that will be turned into linear move if smaller
 
 def genSVG(image_name = "snapShot"):
     # generates an svg image from a bitmap image
     logger = logging.getLogger('pathGen')
 
     # Potrace params
-    turdsize = 30 # suppress speckles of up to this many pixels.
-    alphamax = 1.2 # The default value  is  1.  The  smaller  this  value,  the more sharp corners will be produced. If this parameter is 0, then no smoothing will be performed and the output is a polygon. If this parameter  is  greater  than  4/3,  then all corners are suppressed and the output is completely smooth.
-    opttolerance = 100 #Larger values  allow  more consecutive Bezier curve segments to be joined together in a single segment, at the expense of accuracy.
+    turdsize = 50       # suppress speckles of up to this many pixels.
+    alphamax = 1.2      # The default value  is  1.  The  smaller  this  value,  the more sharp corners will be produced. If this parameter is 0, then no smoothing will be performed and the output is a polygon. If this parameter  is  greater  than  4/3,  then all corners are suppressed and the output is completely smooth.
+    opttolerance = 250  #Larger values  allow  more consecutive Bezier curve segments to be joined together in a single segment, at the expense of accuracy.
 
     logger.info("Generating svg")
     logger.info("TurdSize: {}, AlphaMax: {}, Op: {}".format(turdsize, alphamax, opttolerance))
@@ -47,7 +49,7 @@ def genSVG(image_name = "snapShot"):
     logger.info("Generated SVG successfully")
 
 
-def genCommands(image_name = None):
+def genCommands(image_name = None, drawHeight = penDrawingHeight, liftHeight = penLiftHeight):
     # Generate path commands (LM, PL, PD, CB) from SVG files
     logger = logging.getLogger('pathGen')
     if image_name is None:
@@ -92,48 +94,62 @@ def genCommands(image_name = None):
     def translateY(y):
         return round((float(y) - yOffset)*yScale, 2)
 
+    lastPos = (0, 0)
+
     for i in range(len(paths)):
         for path in paths[i]:
-            if "M" in str(path).upper(): # Lifted move
+            if "M" in str(path): # Lifted move
                 line = str(path).split(" ")
                 coords = line[1].split(",")
 
                 x = translateX(coords[0])
                 y = translateY(coords[1])
+                lastPos = (x, y)
 
                 # perform pen lift at current position
-                commands.append("PL !") # Lift pen at current location
-                commands.append("LM {} {} {}!".format(x, y, penLiftHeight)) # perform linear move with lifted pen
-                commands.append("PD !") # Drop pen at current location
+                commands.append("JZ {}!".format(liftHeight)) # Lift pen at current location
+                commands.append("LM {} {} {}!".format(x, y, liftHeight)) # perform linear move with lifted pen
+                commands.append("JZ {}!".format(drawHeight)) # Drop pen at current location
+
+            if "Z" in str(path): # Lifted move
+                # perform pen lift at current position
+                commands.append("LM {} {} {}!".format(lastPos[0], lastPos[1], drawHeight)) # perform linear move with lifted pen
 
             if "L" in str(path): # Drawn Line
                 line = str(path).split(" ")
                 coords = line[3].split(",")
                 x = translateX(coords[0])
                 y = translateY(coords[1])
-                commands.append("LM {} {} {}!".format(x, y, penDrawingHeight)) # perform linear move (lifted pen)
+                commands.append("LM {} {} {}!".format(x, y, drawHeight)) # perform linear move (pen down)
 
             if "C" in str(path): # Drawn Line
                 line = str(path).split(" ")
-                #split into start, c1, c2, end
-                start = line[1].split(",")
-                c1 = line[3].split(",")
-                c2 = line[4].split(",")
-                endP = line[5].split(",")
+                length = path.length()*xScale
+                if length < minCubicLength:
+                    endP = line[5].split(",")
+                    x = translateX(endP[0])
+                    y = translateY(endP[1])
+                    commands.append("LM {} {} {}!".format(x, y, drawHeight)) # perform linear move (pen down)
+                else: 
+                    #split into start, c1, c2, end
+                    start = line[1].split(",")
+                    c1 = line[3].split(",")
+                    c2 = line[4].split(",")
+                    endP = line[5].split(",")
 
-                startX = translateX(start[0])
-                startY = translateY(start[1])
+                    startX = translateX(start[0])
+                    startY = translateY(start[1])
 
-                c1X = translateX(c1[0])
-                c1Y = translateY(c1[1])
+                    c1X = translateX(c1[0])
+                    c1Y = translateY(c1[1])
 
-                c2X = translateX(c2[0])
-                c2Y = translateY(c2[1])
+                    c2X = translateX(c2[0])
+                    c2Y = translateY(c2[1])
 
-                endX = translateX(endP[0])
-                endY = translateY(endP[1])
+                    endX = translateX(endP[0])
+                    endY = translateY(endP[1])
 
-                commands.append("CB {} {} {} {} {} {} {} {}!".format(startX, startY, c1X, c1Y, c2X, c2Y, endX, endY)) # perform linear move (lifted pen)
+                    commands.append("CB {} {} {} {} {} {} {} {} {}!".format(startX, startY, c1X, c1Y, c2X, c2Y, endX, endY, drawHeight)) # perform linear move (lifted pen)
 
 
     logger.info("Generated Commands Successfully")

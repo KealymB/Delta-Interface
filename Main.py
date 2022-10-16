@@ -1,15 +1,15 @@
+from pydoc import visiblename
 import queue
 import logging
 import threading
-from tracemalloc import Snapshot
-from PIL import Image
+import datetime
 import PySimpleGUI as sg
 import cv2
 import numpy as np
 from enum import Enum
 from pathGen import genSVG, genCommands
 from serialComs import readComs, writeComs, setupComs
-from svg2png import renderProgress, renderPreview
+from svg2png import renderPreview
 from bgRemover import removeBG
 from imgAdjuster import automatic_brightness_and_contrast
 from tkinter.filedialog import askopenfilename
@@ -31,7 +31,9 @@ def main(logger):
     sg.theme('Black')
 
     # define the window layout
-    input_bar = sg.Column([[Button("B_Capture", "Capture", False)], [Button("B_Draw", "Draw", False)], [Button("B_Cancel", "Cancel", False)], [Button("B_Clear", "Clear", False)], [Button("B_Setup", "Setup", True)], [Button("B_Browse", "Browse", False)]])
+    font = ("Helvitica", 18)
+
+    input_bar = sg.Column([[Button("B_Capture", "Capture", False)], [sg.pin(sg.Text("Time Remaining:", key="remainingTime", font=font, visible=False))], [Button("B_Draw", "Draw", False)], [Button("B_Cancel", "Cancel", False)], [Button("B_Clear", "Clear", False)], [Button("B_Setup", "Setup", True)], [Button("B_Browse", "Browse", False)]])
     layout = [[input_bar, sg.pin(sg.Image(size=imgSize, filename='', key='image', visible=False)), sg.pin(sg.Output(size=(60, 30), key='Debug', visible=False)), sg.vtop(sg.Column([[Button("B_Exit", "Exit")],  [sg.ProgressBar(max_value=100, orientation='v', size=(20, 20), key='drawing_progress', visible=False)]], element_justification="c"))]]
 
     # create the window and show it without the plot
@@ -45,14 +47,13 @@ def main(logger):
     # --- Setup of params --- #
 
     global snapShot, commands, index
+
     work_id = 0
     cap = cv2.VideoCapture(0)
     logger.info(cap);
-    preview = True
     snapShot = None
     commands = []           # Command buffer for path commands
     index = 0               # Current position in command buffer
-    numPaths = 0
     States = Enum('State', 'SETUP IDLE PREVIEW DRAWING ERROR')
     State = States.SETUP    # Set initial state
     homed = False           # Flag of if the motors have been homed
@@ -100,6 +101,8 @@ def main(logger):
 
             Snapshot = None
             commands = []
+            index = 0
+
             window['drawing_progress'].update(visible=False)
             window['Draw'].update(visible = False)               # hide draw button
             window['Clear'].update(visible = False)              # hide clear button
@@ -148,23 +151,43 @@ def main(logger):
 
         # Drawing
         if State == States.DRAWING:
-            totCommands = len(commands) 
+            totCommands = len(commands)
             if (totCommands != 0):
                 window['drawing_progress'].update(visible=True)
+                window['Draw'].update(visible = False) # hide draw button               
                 if ready: # if it is a new instruction and a move has been competed, send next command
-                    logger.info("Sending next Command")
-                    writeComs(commands[index])
-                    index += 1
-                    progress_normalized = round((index/totCommands)*100)
-                    logger.info("Progress: {}".format(progress_normalized))
+                    if index < totCommands: 
+                        logger.info("Sending next Command, index: {}".format(index))
+                        writeComs(commands[index])
+                        index += 1
+                        progress_normalized = round((index/totCommands)*100)
+                        logger.info("Progress: {}".format(progress_normalized))
 
-                    window['drawing_progress'].update(progress_normalized)
+                        window['drawing_progress'].update(progress_normalized)
 
-                    time_per_command = 2 # Seconds
-                    time_remaining = (totCommands - index) * time_per_command 
+                        seconds_per_command = 2
+                        time_remaining = (totCommands - index) * seconds_per_command 
+                        window["remainingTime"].update("Time remaining:\n{}".format(str(datetime.timedelta(seconds=time_remaining))))
+                        ready = False
+                    else: 
+                        logger.info("Drawing complete")
 
+                        window['Capture'].update(visible = True)             # show capture button
+                        window['Browse'].update(visible = True)              # show Browse button
+                        window['Draw'].update(visible = False)               # hide draw button
+                        window['Clear'].update(visible = False)              # hide clear button
+                        window['Cancel'].update(visible = False)             # hide cancel button
+                        window['drawing_progress'].update(visible = False)   # hide Progress bar
+                        window["remainingTime"].update(visible= False)       # Hide Text
+
+                        sg.Popup('Drawing Complete!', keep_on_top=True)
+
+                        Snapshot = None
+                        commands = []
+                        index = 0
+
+                        State = States.IDLE
                     # TODO: Implement Timer
-                    # TODO: Implement Image progress? 
 
                     # if progress_normalized % 2 == 0 and prevIndex is not progress_normalized:
                     #     logger.info("Updated preview")
@@ -174,8 +197,6 @@ def main(logger):
                     #     work_id = work_id + 1 if work_id < 19 else 0
 
                     #     snapShot = Img2Byte("progress.png")     # render svg to screen
-
-                    ready = False
                 
 
         if State == States.SETUP:
