@@ -12,11 +12,12 @@ pt2px = 1.333
 px2pt = 0.75
 
 # Drawing params
-drawingWidth = 120 * px2pt     # width in mm
-drawingHeight = 120 * px2pt  # height in mm
+drawingWidth = 140 * px2pt     # width in mm
+drawingHeight = 140 * px2pt  # height in mm
 
-penLiftHeight = 156    # lifted pen height in mm
-penDrawingHeight = 154 # Drawing height in mm
+
+penDrawingHeight = 0.0 # Drawing height in mm
+penLiftHeight = penDrawingHeight + 5.0    # lifted pen height in mm
 
 minCubicLength = 2 # minimum cubic length that will be turned into linear move if smaller
 
@@ -43,8 +44,28 @@ def genSVG(image_name = "snapShot"):
     # im = Image.open("{}.pbm".format(image_name))
     # im.save("{}_de.bmp".format(image_name))
 
+    # Iamge segmentation using k-closet
+
+    sample_image = cv2.imread("{}.bmp".format(image_name))
+    img = cv2.cvtColor(sample_image,cv2.COLOR_BGR2RGB)
+
+    twoDimage = img.reshape((-1,3))
+    twoDimage = np.float32(twoDimage)
+
+
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+    K = 2
+    attempts=20
+
+    ret, label, center = cv2.kmeans(twoDimage,K,None,criteria,attempts,cv2.KMEANS_PP_CENTERS)
+    center = np.uint8(center)
+    res = center[label.flatten()]
+    result_image = res.reshape((img.shape))
+
+    cv2.imwrite("{}_edit.bmp".format(image_name), result_image)
+
     # convert bitmap image to svg file
-    os.system("potrace --svg {image_name}.bmp -o {image_name}.svg -t {turdsize} -a {alphamax} -O {tolerance}".format(image_name = image_name, turdsize=turdsize, alphamax=alphamax, tolerance=opttolerance))
+    os.system("potrace --svg {image_name}_edit.bmp -o {image_name}.svg -t {turdsize} -a {alphamax} -O {tolerance}".format(image_name = image_name, turdsize=turdsize, alphamax=alphamax, tolerance=opttolerance))
 
     logger.info("Generated SVG successfully")
 
@@ -162,3 +183,6 @@ def genCommands(image_name = None, drawHeight = penDrawingHeight, liftHeight = p
             
     return commands, len(paths)
         
+
+if __name__ == 'main':
+    genSVG()

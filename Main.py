@@ -10,7 +10,7 @@ from enum import Enum
 from pathGen import genSVG, genCommands
 from serialComs import readComs, writeComs, setupComs
 from svg2png import renderPreview
-from bgRemover import removeBG
+#from bgRemover import removeBG
 from imgAdjuster import automatic_brightness_and_contrast
 from tkinter.filedialog import askopenfilename
 
@@ -24,7 +24,8 @@ def main(logger):
     gui_queue = queue.Queue()  # queue used to communicate between the gui and long-running code
 
     # Params
-    imgSize = (450, 450)
+    imgSize = (600, 600)
+    previewSize = (450, 450)
     windowSize = (800, 480)
 
     # GUI Theme
@@ -34,13 +35,13 @@ def main(logger):
     font = ("Helvitica", 18)
 
     input_bar = sg.Column([[Button("B_Capture", "Capture", False)], [sg.pin(sg.Text("Time Remaining:", key="remainingTime", font=font, visible=False))], [Button("B_Draw", "Draw", False)], [Button("B_Cancel", "Cancel", False)], [Button("B_Clear", "Clear", False)], [Button("B_Setup", "Setup", True)], [Button("B_Browse", "Browse", False)]])
-    layout = [[input_bar, sg.pin(sg.Image(size=imgSize, filename='', key='image', visible=False)), sg.pin(sg.Output(size=(60, 30), key='Debug', visible=False)), sg.vtop(sg.Column([[Button("B_Exit", "Exit")],  [sg.ProgressBar(max_value=100, orientation='v', size=(20, 20), key='drawing_progress', visible=False)]], element_justification="c"))]]
+    layout = [[input_bar, sg.pin(sg.Image(size=previewSize, filename='', key='image', visible=False)), sg.pin(sg.Output(size=(60, 30), key='Debug', visible=False)), sg.vtop(sg.Column([[Button("B_Exit", "Exit")],  [sg.ProgressBar(max_value=100, orientation='v', size=(20, 20), key='drawing_progress', visible=False)]], element_justification="c"))]]
 
     # create the window and show it without the plot
     window = sg.Window('Delta Draw',
                        layout, location=(0, 0), no_titlebar=False, element_justification='c', size=windowSize).Finalize()
 
-    window.Maximize()
+    #window.Maximize()
 
     logger.info("GUI Setup complete")
 
@@ -90,7 +91,7 @@ def main(logger):
 
             ret, frame = cap.read() # Read web cam
 
-            thread_id = threading.Thread(target=generatePreview, args=(work_id, gui_queue, frame, imgSize), daemon=True) # Start Loader
+            thread_id = threading.Thread(target=generatePreview, args=(work_id, gui_queue, frame, previewSize), daemon=True) # Start Loader
             thread_id.start()
             work_id = work_id + 1 if work_id < 19 else 0
             
@@ -107,6 +108,7 @@ def main(logger):
             window['Draw'].update(visible = False)               # hide draw button
             window['Clear'].update(visible = False)              # hide clear button
             window['Cancel'].update(visible = False)             # hide cancel button
+            window["remainingTime"].update(visible= False) 
 
             State = States.IDLE
 
@@ -141,9 +143,9 @@ def main(logger):
             if filename:
                 logger.info("Loaded: " + filename)
                 img = cv2.imread(filename)
-                img_resized = cv2.resize(img, imgSize)
+                img_resized = cv2.resize(img, previewSize)
 
-                thread_id = threading.Thread(target=generatePreview, args=(work_id, gui_queue, img_resized, imgSize), daemon=True) # Start Loader
+                thread_id = threading.Thread(target=generatePreview, args=(work_id, gui_queue, img_resized, previewSize), daemon=True) # Start Loader
                 thread_id.start()
                 work_id = work_id + 1 if work_id < 19 else 0
 
@@ -153,9 +155,11 @@ def main(logger):
         if State == States.DRAWING:
             totCommands = len(commands)
             if (totCommands != 0):
+
                 window['drawing_progress'].update(visible=True)
                 window['Draw'].update(visible = False)          # hide draw button     
-                window["remainingTime"].update(visible=True)    # Show Text          
+                window["remainingTime"].update(visible=True)    # Show Text      
+
                 if ready: # if it is a new instruction and a move has been competed, send next command
                     if index < totCommands: 
                         logger.info("Sending next Command, index: {}".format(index))
@@ -167,7 +171,8 @@ def main(logger):
                         window['drawing_progress'].update(progress_normalized)
 
                         seconds_per_command = 2
-                        time_remaining = (totCommands - index) * seconds_per_command 
+                        initial_time = 10
+                        time_remaining = round((totCommands - index) * seconds_per_command + (initial_time * (totCommands-index)/totCommands), 2)
                         window["remainingTime"].update("Time remaining:\n{}".format(str(datetime.timedelta(seconds=time_remaining))))
                         ready = False
                     else: 
@@ -180,6 +185,9 @@ def main(logger):
                         window['Cancel'].update(visible = False)             # hide cancel button
                         window['drawing_progress'].update(visible = False)   # hide Progress bar
                         window["remainingTime"].update(visible= False)       # Hide Text
+
+                        ready = False
+                        writeComs("HS !") # Send Home stepper command
 
                         sg.Popup('Drawing Complete!', keep_on_top=True)
 
@@ -209,13 +217,15 @@ def main(logger):
             window['Browse'].update(visible = False)            # hide browse button
             window['Draw'].update(visible = True)               # show draw button
             window['Clear'].update(visible = True)              # show clear button
-            window['image'].update(data=snapShot, size=imgSize) # show the final image
+            window['image'].update(data=snapShot, size=(450, 450)) # show the final image
 
         if State == States.IDLE:
             ret, frame = cap.read()
-            croped_img = frame[0:imgSize[0], 0:imgSize[1]]
+
+            croped_img = frame[0:previewSize[0], 0:previewSize[1]]
             imgbytes = cv2.imencode('.png', croped_img)[1].tobytes()
-            window['image'].update(data=imgbytes, size=imgSize, visible = True)
+
+            window['image'].update(data=imgbytes, size=previewSize, visible = True)
             window['Capture'].update(visible = True)
             window['Browse'].update(visible = True)
             window['Setup'].update(visible = False)
@@ -246,12 +256,11 @@ def Img2Byte(imgPath):
     imgbytes = cv2.imencode('.png', img)[1].tobytes()
     return imgbytes
 
-
 def generateProgress(work_id, gui_queue, imgSize, progress):
     # renders progress image
     if progress == 0: return; # dont render preview if progress is 0
 
-    renderPreview(imgSize=imgSize, progress=progress) # render the svg to a file
+    renderPreview(progress=progress) # render the svg to a file
     snapShot = Img2Byte("progress.png")     # render svg to screen
 
     gui_queue.put('{} ::: done'.format(work_id))
@@ -273,9 +282,9 @@ def generatePreview(work_id, gui_queue, frame, imgSize):
     cv2.imwrite("snapShot.bmp", flipped_img) # write image to file
 
     automatic_brightness_and_contrast() # normalize image 
-    removeBG(imgSize) # replace background with white
+    #removeBG(imgSize) # replace background with white
     genSVG() # generate the svg from the image
-    renderPreview(imgSize) # render the svg to a file
+    renderPreview() # render the svg to a file
     snapShot = Img2Byte("progress.png") # render svg to screen
 
     gui_queue.put('{} ::: done'.format(work_id))

@@ -156,7 +156,7 @@ def renderProgress(imgSize, img_name = "snapShot.svg", progress = None):
     logger.info("Drawn to progress.png")
     
     img = cv2.imread("progress.png")
-    imgSize = (450, 450)
+    imgSize = (600, 600)
     img_resized = cv2.resize(img, imgSize)
     cv2.imwrite("progress.png", img_resized)
 
