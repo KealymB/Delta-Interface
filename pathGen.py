@@ -38,16 +38,17 @@ def genSVG(image_name = "snapShot"):
     # edges = cv2.Canny(img,100,200)
     # cv2.imwrite("{}_de.bmp".format(image_name), edges)
     # it wraps around when drawing so no good
+
     # use mkbitmap
     # os.system("mkbitmap {}.bmp -f 200 -s 2 -t 0.60".format(image_name))
 
     # im = Image.open("{}.pbm".format(image_name))
     # im.save("{}_de.bmp".format(image_name))
 
-    # Iamge segmentation using k-closet
+    # Image segmentation using k-closet
 
     sample_image = cv2.imread("{}.bmp".format(image_name))
-    img = cv2.cvtColor(sample_image,cv2.COLOR_BGR2RGB)
+    img = cv2.cvtColor(sample_image, cv2.COLOR_BGR2RGB)
 
     twoDimage = img.reshape((-1,3))
     twoDimage = np.float32(twoDimage)
