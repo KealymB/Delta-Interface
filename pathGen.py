@@ -16,7 +16,7 @@ drawingWidth = 140 * px2pt     # width in mm
 drawingHeight = 140 * px2pt  # height in mm
 
 
-penDrawingHeight = 0.0 # Drawing height in mm
+penDrawingHeight = -1.0 # Drawing height in mm
 penLiftHeight = penDrawingHeight + 5.0    # lifted pen height in mm
 
 minCubicLength = 2 # minimum cubic length that will be turned into linear move if smaller
