@@ -13,7 +13,7 @@ def setupComs():
     logger = logging.getLogger('Serial')
     
     try: 
-        ser = serial.Serial('/dev/ttyUSB0', 115200) # Pi: "/dev/ttyUSB0" PC: "COM3"
+        ser = serial.Serial('COM3', 115200) # Pi: "/dev/ttyUSB0" PC: "COM3"
     except:
         logger.error("Cannot open serial port")
         ser = None
@@ -47,7 +47,8 @@ def bufferHandler():
     logger.info("Reply: {}".format(buffer))
 
     if buffer.startswith("E3"): # repeat last command
-        writeComs(prevInstruction)
+        # writeComs(prevInstruction)
+        return 1
     if buffer.startswith("E5") or buffer.startswith("E0"): # over heating error
         return -1
     if buffer.startswith("A"):

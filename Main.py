@@ -10,7 +10,7 @@ from enum import Enum
 from pathGen import genSVG, genCommands
 from serialComs import readComs, writeComs, setupComs
 from svg2png import renderPreview
-from bgRemover import removeBG
+#from bgRemover import removeBG
 from imgAdjuster import automatic_brightness_and_contrast
 from tkinter.filedialog import askopenfilename
 
@@ -34,14 +34,14 @@ def main(logger):
     # define the window layout
     font = ("Helvitica", 18)
 
-    input_bar = sg.Column([[Button("B_Capture", "Capture", False)], [sg.pin(sg.Text("Time Remaining:", key="remainingTime", font=font, visible=False))], [Button("B_Draw", "Draw", False)], [Button("B_Cancel", "Cancel", False)], [Button("B_Clear", "Clear", False)], [Button("B_Setup", "Setup", True)], [Button("B_Browse", "Browse", False)]])
+    input_bar = sg.Column([[Button("B_Capture", "Capture", False)], [sg.pin(sg.Text("Time Remaining:", key="remainingTime", font=font, visible=False, justification='c'))], [Button("B_Draw", "Draw", False)], [Button("B_Cancel", "Cancel", False)], [Button("B_Clear", "Clear", False)], [Button("B_Setup", "Setup", True)], [Button("B_Browse", "Browse", False)]])
     layout = [[input_bar, sg.pin(sg.Image(size=previewSize, filename='', key='image', visible=False)), sg.pin(sg.Output(size=(60, 30), key='Debug', visible=False)), sg.vtop(sg.Column([[Button("B_Exit", "Exit")],  [sg.ProgressBar(max_value=100, orientation='v', size=(20, 20), key='drawing_progress', visible=False)]], element_justification="c"))]]
 
     # create the window and show it without the plot
     window = sg.Window('Delta Draw',
                        layout, location=(0, 0), no_titlebar=False, element_justification='c', size=windowSize).Finalize()
 
-    window.Maximize()
+    #window.Maximize()
 
     logger.info("GUI Setup complete")
 
@@ -175,7 +175,7 @@ def main(logger):
                         seconds_per_command = 2
                         initial_time = 10
                         time_remaining = round((totCommands - index) * seconds_per_command + (initial_time * (totCommands-index)/totCommands), 2)
-                        window["remainingTime"].update("Time remaining:\n{}".format(str(datetime.timedelta(seconds=time_remaining))))
+                        window["remainingTime"].update("Time remaining:\n{:0>6}".format(str(datetime.timedelta(seconds=time_remaining))[:-4]))
                         ready = False
                     else: 
                         logger.info("Drawing complete")
@@ -284,7 +284,7 @@ def generatePreview(work_id, gui_queue, frame, imgSize):
     cv2.imwrite("snapShot.bmp", flipped_img) # write image to file
 
     automatic_brightness_and_contrast() # normalize image 
-    removeBG(imgSize) # replace background with white
+    #removeBG(imgSize) # replace background with white
     genSVG() # generate the svg from the image
     renderPreview() # render the svg to a file
     snapShot = Img2Byte("progress.png") # render svg to screen
