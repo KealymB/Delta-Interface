@@ -10,7 +10,7 @@ from enum import Enum
 from pathGen import genSVG, genCommands
 from serialComs import readComs, writeComs, setupComs
 from svg2png import renderPreview
-#from bgRemover import removeBG
+from bgRemover import removeBG
 from imgAdjuster import automatic_brightness_and_contrast
 from tkinter.filedialog import askopenfilename
 
@@ -284,7 +284,7 @@ def generatePreview(work_id, gui_queue, frame, imgSize):
     cv2.imwrite("snapShot.bmp", flipped_img) # write image to file
 
     automatic_brightness_and_contrast() # normalize image 
-    #removeBG(imgSize) # replace background with white
+    removeBG(imgSize) # replace background with white
     genSVG() # generate the svg from the image
     renderPreview() # render the svg to a file
     snapShot = Img2Byte("progress.png") # render svg to screen
