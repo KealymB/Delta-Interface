@@ -11,9 +11,12 @@ import cv2
 pt2px = 1.333
 px2pt = 0.75
 
+# scale factor
+scale_factor = 1.2
+
 # Drawing params
-drawingWidth = 140 * px2pt     # width in mm
-drawingHeight = 140 * px2pt  # height in mm
+drawingWidth = 140 * scale_factor * px2pt     # width in mm
+drawingHeight = 140 * scale_factor * px2pt  # height in mm
 
 
 penDrawingHeight = -1.0 # Drawing height in mm
