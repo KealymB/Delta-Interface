@@ -1,6 +1,7 @@
 __pycache__/
 env/
 snapShot.*
+snapShot_edit.*
 progress.*
 model.h5
 logs.txt
