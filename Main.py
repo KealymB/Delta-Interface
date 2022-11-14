@@ -41,7 +41,7 @@ def main(logger):
     window = sg.Window('Delta Draw',
                        layout, location=(0, 0), no_titlebar=False, element_justification='c', size=windowSize).Finalize()
 
-    #window.Maximize()
+    window.Maximize()
 
     logger.info("GUI Setup complete")
 
