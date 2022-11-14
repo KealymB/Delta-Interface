@@ -281,6 +281,7 @@ def generatePreview(work_id, gui_queue, frame, imgSize):
 
     croped_img = frame[0:imgSize[0], 0:imgSize[1]] # crop image to size
     flipped_img = cv2.flip(croped_img, 1) #vertically flips image (0: vertical; 1: horizontal; -1: both)
+    flipped_img = cv2.flip(croped_img, 0)
     cv2.imwrite("snapShot.bmp", flipped_img) # write image to file
 
     automatic_brightness_and_contrast() # normalize image 
