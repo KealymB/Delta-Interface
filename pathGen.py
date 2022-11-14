@@ -98,7 +98,7 @@ def genCommands(image_name = None, drawHeight = penDrawingHeight, liftHeight = p
     xScale = drawingWidth/width
     xOffset = width/2
 
-    yScale = drawingHeight/height
+    yScale = -drawingHeight/height
     yOffset = height/2
 
     logger.info("Image xScale: {}, yScale: {}, xOffset: {}, yOffset: {}".format(xScale, yScale, xOffset, yOffset))
