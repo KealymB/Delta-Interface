@@ -112,6 +112,8 @@ def main(logger):
             window['Cancel'].update(visible = False)             # hide cancel button
             window["remainingTime"].update(visible= False) 
 
+            writeComs("HS !") # send home stepper command
+
             State = States.IDLE
 
         if event == 'Clear':
