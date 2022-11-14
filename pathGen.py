@@ -30,7 +30,7 @@ def genSVG(image_name = "snapShot"):
 
     # Potrace params
     turdsize = 25       # suppress speckles of up to this many pixels.
-    alphamax = 1.2      # The default value  is  1.  The  smaller  this  value,  the more sharp corners will be produced. If this parameter is 0, then no smoothing will be performed and the output is a polygon. If this parameter  is  greater  than  4/3,  then all corners are suppressed and the output is completely smooth.
+    alphamax = 1.1      # The default value  is  1.  The  smaller  this  value,  the more sharp corners will be produced. If this parameter is 0, then no smoothing will be performed and the output is a polygon. If this parameter  is  greater  than  4/3,  then all corners are suppressed and the output is completely smooth.
     opttolerance = 150  #Larger values  allow  more consecutive Bezier curve segments to be joined together in a single segment, at the expense of accuracy.
 
     logger.info("Generating svg")
