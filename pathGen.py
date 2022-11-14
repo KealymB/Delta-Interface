@@ -12,7 +12,7 @@ pt2px = 1.333
 px2pt = 0.75
 
 # scale factor
-scale_factor = 1.2
+scale_factor = 1.15
 
 # Drawing params
 drawingWidth = 140 * scale_factor * px2pt     # width in mm
