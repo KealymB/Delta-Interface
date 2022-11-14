@@ -41,7 +41,7 @@ def main(logger):
     window = sg.Window('Delta Draw',
                        layout, location=(0, 0), no_titlebar=False, element_justification='c', size=windowSize).Finalize()
 
-    window.Maximize()
+    #window.Maximize()
 
     logger.info("GUI Setup complete")
 
@@ -280,7 +280,7 @@ def generatePreview(work_id, gui_queue, frame, imgSize):
     global snapShot
 
     croped_img = frame[0:imgSize[0], 0:imgSize[1]] # crop image to size
-    flipped_img = cv2.flip(croped_img, 0) #vertically flips image (0: vertical; 1: horizontal; -1: both)
+    flipped_img = cv2.flip(croped_img, -1) #vertically flips image (0: vertical; 1: horizontal; -1: both)
     cv2.imwrite("snapShot.bmp", flipped_img) # write image to file
 
     automatic_brightness_and_contrast() # normalize image 
